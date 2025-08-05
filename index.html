@@ -208,14 +208,24 @@
             </div>
             
             <div class="glass-card p-4 mb-4">
-                <div class="flex flex-col">
-                    <div class="flex flex-col sm:flex-row items-center gap-4">
-                        <div class="grid grid-cols-3 gap-2 flex-grow w-full sm:w-auto" id="admin-date-filter-buttons">
-                            <button data-filter="this-week" class="filter-btn w-full px-3 py-2 text-sm rounded-lg bg-white/50 hover:bg-white/80 transition-shadow">This Week</button>
-                            <button data-filter="last-week" class="filter-btn w-full px-3 py-2 text-sm rounded-lg bg-white/50 hover:bg-white/80 transition-shadow">Last Week</button>
-                            <button data-filter="custom" class="filter-btn w-full px-3 py-2 text-sm rounded-lg bg-white/50 hover:bg-white/80 transition-shadow">Custom</button>
+                <div class="flex flex-col gap-4">
+                    <div class="grid grid-cols-3 gap-2 flex-grow w-full" id="admin-date-filter-buttons">
+                        <button data-filter="this-week" class="filter-btn w-full px-3 py-2 text-sm rounded-lg bg-white/50 hover:bg-white/80 transition-shadow">This Week</button>
+                        <button data-filter="last-week" class="filter-btn w-full px-3 py-2 text-sm rounded-lg bg-white/50 hover:bg-white/80 transition-shadow">Last Week</button>
+                        <button data-filter="custom" class="filter-btn w-full px-3 py-2 text-sm rounded-lg bg-white/50 hover:bg-white/80 transition-shadow">Custom</button>
+                    </div>
+                     <div id="admin-custom-date-filter" class="hidden flex flex-col sm:flex-row items-center gap-4">
+                         <div class="w-full sm:w-auto flex-1">
+                            <label for="admin-start-date-input" class="text-xs text-gray-600">Start Date:</label>
+                            <input type="date" id="admin-start-date-input" class="w-full p-2 text-sm rounded-lg border-white/40 bg-white/50 focus:ring-pink-500 focus:border-pink-500">
                         </div>
-                        <div class="w-full sm:w-auto">
+                        <div class="w-full sm:w-auto flex-1">
+                            <label for="admin-end-date-input" class="text-xs text-gray-600">End Date:</label>
+                            <input type="date" id="admin-end-date-input" class="w-full p-2 text-sm rounded-lg border-white/40 bg-white/50 focus:ring-pink-500 focus:border-pink-500">
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <div class="w-full flex-grow">
                             <label for="seller-filter" class="sr-only">Select Seller</label>
                             <select id="seller-filter" class="w-full p-2 text-sm rounded-lg border-white/40 bg-white/50 focus:ring-pink-500 focus:border-pink-500">
                                 <!-- Options populated by JS -->
@@ -227,16 +237,6 @@
                         <button id="open-user-management-btn" class="flex-shrink-0 flex items-center justify-center bg-gray-700 text-white w-10 h-10 rounded-full hover:bg-gray-800 transition-all duration-300 transform hover:scale-110 shadow-lg" title="Manage Users">
                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                         </button>
-                    </div>
-                    <div id="admin-custom-date-filter" class="hidden flex flex-col sm:flex-row items-center gap-4 mt-4">
-                         <div class="w-full sm:w-auto flex-1">
-                            <label for="admin-start-date-input" class="text-xs text-gray-600">Start Date:</label>
-                            <input type="date" id="admin-start-date-input" class="w-full p-2 text-sm rounded-lg border-white/40 bg-white/50 focus:ring-pink-500 focus:border-pink-500">
-                        </div>
-                        <div class="w-full sm:w-auto flex-1">
-                            <label for="admin-end-date-input" class="text-xs text-gray-600">End Date:</label>
-                            <input type="date" id="admin-end-date-input" class="w-full p-2 text-sm rounded-lg border-white/40 bg-white/50 focus:ring-pink-500 focus:border-pink-500">
-                        </div>
                     </div>
                 </div>
             </div>
