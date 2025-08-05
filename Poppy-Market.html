@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PWA Seller/Admin Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* Custom Styles */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.45);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-radius: 1.25rem; /* 20px */
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+        }
+        .hidden {
+            display: none;
+        }
+        .filter-btn.active {
+            background-color: #ec4899; /* pink-500 */
+            color: white;
+            font-weight: bold;
+            box-shadow: 0 4px 14px 0 rgb(236 72 153 / 39%);
+        }
+
+        /* --- Responsive Table/Card List Styling --- */
+        .logs-table thead, .users-table thead { display: none; }
+        .logs-table tr, .users-table tr {
+            display: block;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 0.75rem;
+            margin-bottom: 1rem;
+            padding: 0.75rem 1rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .logs-table td, .users-table td {
+            display: block;
+            padding: 0;
+            text-align: left;
+            border-bottom: none;
+        }
+        .logs-table td::before, .users-table td::before { display: none; }
+
+        @media (min-width: 1024px) {
+            .logs-table thead, .users-table thead { display: table-header-group; }
+            .logs-table tr, .users-table tr {
+                display: table-row;
+                background: transparent;
+                box-shadow: none;
+                margin-bottom: 0;
+                padding: 0;
+                border-radius: 0;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+            }
+             .logs-table tbody tr:last-child, .users-table tbody tr:last-child { border-bottom: none; }
+            .logs-table td, .users-table td {
+                display: table-cell;
+                padding: 0.75rem;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-pink-200 via-rose-100 to-stone-200 min-h-screen w-full">
+
+    <main id="app-container" class="p-4 max-w-6xl mx-auto">
+        <!-- Login Screen -->
+        <div id="login-screen" class="w-full max-w-md text-center mx-auto mt-[20vh]">
+            <div class="glass-card p-8">
+                <h1 class="text-4xl font-bold text-gray-800 mb-2">Welcome</h1>
+                <p class="text-gray-600 mb-8">Please select your role to sign in.</p>
+                <div class="space-y-4">
+                    <button id="login-seller" class="w-full flex items-center justify-center gap-3 bg-pink-500 text-white font-bold py-3 px-4 rounded-xl hover:bg-pink-600 transition-all duration-300 transform hover:scale-105 shadow-md">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                        <span>Login as Seller</span>
+                    </button>
+                    <button id="login-admin" class="w-full flex items-center justify-center gap-3 bg-gray-700 text-white font-bold py-3 px-4 rounded-xl hover:bg-gray-800 transition-all duration-300 transform hover:scale-105 shadow-md">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                        <span>Login as Admin</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Seller Dashboard -->
+        <div id="seller-dashboard" class="hidden w-full">
+            <div class="flex justify-between items-center mb-4">
+                <h1 class="text-3xl font-bold text-gray-800">Dashboard</h1>
+                <div class="flex items-center gap-4">
+                    <button id="open-profile-modal-btn" class="flex items-center justify-center bg-white/50 text-gray-600 w-10 h-10 rounded-full hover:bg-white/80 transition-all" title="My Profile">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    </button>
+                    <button class="logout-btn flex items-center gap-2 text-gray-600 hover:text-pink-500 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                        <span>Logout</span>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="glass-card p-4 mb-4">
+                <div class="flex flex-col">
+                    <div class="flex items-center gap-4">
+                        <div class="grid grid-cols-3 gap-2 flex-grow" id="date-filter-buttons">
+                            <button data-filter="this-week" class="filter-btn w-full px-3 py-2 text-sm rounded-lg bg-white/50 hover:bg-white/80 transition-shadow">This Week</button>
+                            <button data-filter="last-week" class="filter-btn w-full px-3 py-2 text-sm rounded-lg bg-white/50 hover:bg-white/80 transition-shadow">Last Week</button>
+                            <button data-filter="custom" class="filter-btn w-full px-3 py-2 text-sm rounded-lg bg-white/50 hover:bg-white/80 transition-shadow">Custom</button>
+                        </div>
+                        <button id="open-log-entry-modal" class="flex-shrink-0 flex items-center justify-center bg-pink-500 text-white w-10 h-10 rounded-full hover:bg-pink-600 transition-all duration-300 transform hover:scale-110 shadow-lg">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14m-7-7h14"/></svg>
+                        </button>
+                    </div>
+                    <div id="custom-date-filter" class="hidden flex flex-col sm:flex-row items-center gap-4 mt-4">
+                         <div class="w-full sm:w-auto flex-1">
+                            <label for="start-date-input" class="text-xs text-gray-600">Start Date:</label>
+                            <input type="date" id="start-date-input" class="w-full p-2 text-sm rounded-lg border-white/40 bg-white/50 focus:ring-pink-500 focus:border-pink-500">
+                        </div>
+                        <div class="w-full sm:w-auto flex-1">
+                            <label for="end-date-input" class="text-xs text-gray-600">End Date:</label>
+                            <input type="date" id="end-date-input" class="w-full p-2 text-sm rounded-lg border-white/40 bg-white/50 focus:ring-pink-500 focus:border-pink-500">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+                <!-- Stat Cards -->
+                <div class="glass-card text-center p-2"><div class="flex items-center justify-center gap-1.5"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-pink-600"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg><p class="text-gray-600 text-xs font-medium">Branded</p></div><p id="stat-branded" class="text-2xl font-bold text-gray-800">0</p></div>
+                <div class="glass-card text-center p-2"><div class="flex items-center justify-center gap-1.5"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-teal-600"><path d="M20.38 3.46 16 2a4 4 0 0 0-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"/></svg><p class="text-gray-600 text-xs font-medium">Free Size</p></div><p id="stat-freesize" class="text-2xl font-bold text-gray-800">0</p></div>
+                <div class="glass-card text-center p-2"><div class="flex items-center justify-center gap-1.5"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-600"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4h-4z"/></svg><p class="text-gray-600 text-xs font-medium">Base Pay</p></div><p id="stat-basepay" class="text-xl font-bold text-gray-800">₱0</p></div>
+                
+                <!-- Bonus Cards -->
+                <div class="glass-card text-center p-2 bg-amber-100/60">
+                    <div class="relative group flex items-center justify-center gap-1.5">
+                        <p class="text-amber-800 text-xs font-medium">Daily Bonus</p>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-amber-600"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                        <div class="absolute bottom-full mb-2 w-48 p-2 text-xs text-left text-white bg-gray-800 rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10">
+                            Bonus based on hitting daily sales targets.
+                            <svg class="absolute text-gray-800 h-2 w-full left-0 top-full" x="0px" y="0px" viewBox="0 0 255 255" xml:space="preserve"><polygon class="fill-current" points="0,0 127.5,127.5 255,0"/></svg>
+                        </div>
+                    </div>
+                    <p id="stat-daily-bonus" class="text-xl font-bold text-amber-900">₱0</p>
+                </div>
+                <div class="glass-card text-center p-2 bg-amber-100/60">
+                    <div class="relative group flex items-center justify-center gap-1.5">
+                        <p class="text-amber-800 text-xs font-medium">Weekly Bonus</p>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-amber-600"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                        <div class="absolute bottom-full mb-2 w-48 p-2 text-xs text-left text-white bg-gray-800 rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10">
+                            Bonus for consistently meeting weekly item quotas.
+                            <svg class="absolute text-gray-800 h-2 w-full left-0 top-full" x="0px" y="0px" viewBox="0 0 255 255" xml:space="preserve"><polygon class="fill-current" points="0,0 127.5,127.5 255,0"/></svg>
+                        </div>
+                    </div>
+                    <p id="stat-weekly-bonus" class="text-xl font-bold text-amber-900">₱0</p>
+                </div>
+                <div class="glass-card text-center p-2 bg-amber-100/60">
+                     <div class="relative group flex items-center justify-center gap-1.5">
+                        <p class="text-amber-800 text-xs font-medium">Monthly Bonus</p>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-amber-600"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                        <div class="absolute bottom-full mb-2 w-48 p-2 text-xs text-left text-white bg-gray-800 rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10">
+                           Top performers of the month receive an additional bonus.
+                            <svg class="absolute text-gray-800 h-2 w-full left-0 top-full" x="0px" y="0px" viewBox="0 0 255 255" xml:space="preserve"><polygon class="fill-current" points="0,0 127.5,127.5 255,0"/></svg>
+                        </div>
+                    </div>
+                    <p id="stat-monthly-bonus" class="text-xl font-bold text-amber-900">₱0</p>
+                </div>
+                <div class="glass-card text-center p-2 col-span-2 bg-purple-200/60">
+                    <div class="flex items-center justify-center gap-1.5">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-purple-800"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+                        <p class="text-purple-800 text-xs font-medium">Total Payout</p>
+                    </div>
+                    <p id="stat-total" class="text-xl font-bold text-purple-900">₱0</p>
+                </div>
+            </div>
+
+            <div class="glass-card">
+                <h2 class="text-xl font-bold text-gray-700 mb-4 px-4 pt-4 lg:px-6 lg:pt-6">Previous Logs</h2>
+                <div class="w-full">
+                    <table class="logs-table w-full text-left">
+                        <thead>
+                            <tr>
+                                <th class="p-3 font-semibold text-gray-700 text-sm">Date & Duration</th>
+                                <th class="p-3 font-semibold text-gray-700 text-sm">Items Sold</th>
+                                <th class="p-3 font-semibold text-gray-700 text-sm">Payout Details</th>
+                            </tr>
+                        </thead>
+                        <tbody id="previous-logs-table">
+                            <!-- JS will populate this -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin Dashboard -->
+        <div id="admin-dashboard" class="hidden w-full">
+            <div class="flex justify-between items-center mb-4">
+                <h1 class="text-3xl font-bold text-gray-800">Admin</h1>
+                <button class="logout-btn flex items-center gap-2 text-gray-600 hover:text-pink-500 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                    <span>Logout</span>
+                </button>
+            </div>
+            
+            <div class="glass-card p-4 mb-4">
+                <div class="flex flex-col">
+                    <div class="flex flex-col sm:flex-row items-center gap-4">
+                        <div class="grid grid-cols-3 gap-2 flex-grow w-full sm:w-auto" id="admin-date-filter-buttons">
+                            <button data-filter="this-week" class="filter-btn w-full px-3 py-2 text-sm rounded-lg bg-white/50 hover:bg-white/80 transition-shadow">This Week</button>
+                            <button data-filter="last-week" class="filter-btn w-full px-3 py-2 text-sm rounded-lg bg-white/50 hover:bg-white/80 transition-shadow">Last Week</button>
+                            <button data-filter="custom" class="filter-btn w-full px-3 py-2 text-sm rounded-lg bg-white/50 hover:bg-white/80 transition-shadow">Custom</button>
+                        </div>
+                        <div class="w-full sm:w-auto">
+                            <label for="seller-filter" class="sr-only">Select Seller</label>
+                            <select id="seller-filter" class="w-full p-2 text-sm rounded-lg border-white/40 bg-white/50 focus:ring-pink-500 focus:border-pink-500">
+                                <!-- Options populated by JS -->
+                            </select>
+                        </div>
+                        <button id="open-bonus-config-modal" class="flex-shrink-0 flex items-center justify-center bg-blue-500 text-white w-10 h-10 rounded-full hover:bg-blue-600 transition-all duration-300 transform hover:scale-110 shadow-lg" title="Bonus Configuration">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-4.44a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8.38"/><path d="M16 2l5 5h-5V2z"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/></svg>
+                        </button>
+                        <button id="open-user-management-btn" class="flex-shrink-0 flex items-center justify-center bg-gray-700 text-white w-10 h-10 rounded-full hover:bg-gray-800 transition-all duration-300 transform hover:scale-110 shadow-lg" title="Manage Users">
+                           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                        </button>
+                    </div>
+                    <div id="admin-custom-date-filter" class="hidden flex flex-col sm:flex-row items-center gap-4 mt-4">
+                         <div class="w-full sm:w-auto flex-1">
+                            <label for="admin-start-date-input" class="text-xs text-gray-600">Start Date:</label>
+                            <input type="date" id="admin-start-date-input" class="w-full p-2 text-sm rounded-lg border-white/40 bg-white/50 focus:ring-pink-500 focus:border-pink-500">
+                        </div>
+                        <div class="w-full sm:w-auto flex-1">
+                            <label for="admin-end-date-input" class="text-xs text-gray-600">End Date:</label>
+                            <input type="date" id="admin-end-date-input" class="w-full p-2 text-sm rounded-lg border-white/40 bg-white/50 focus:ring-pink-500 focus:border-pink-500">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+                <!-- Admin Stat Cards -->
+                <div class="glass-card text-center p-2"><div class="flex items-center justify-center gap-1.5"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-pink-600"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg><p class="text-gray-600 text-xs font-medium">Branded</p></div><p id="admin-stat-branded" class="text-2xl font-bold text-gray-800">0</p></div>
+                <div class="glass-card text-center p-2"><div class="flex items-center justify-center gap-1.5"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-teal-600"><path d="M20.38 3.46 16 2a4 4 0 0 0-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"/></svg><p class="text-gray-600 text-xs font-medium">Free Size</p></div><p id="admin-stat-freesize" class="text-2xl font-bold text-gray-800">0</p></div>
+                <div class="glass-card text-center p-2"><div class="flex items-center justify-center gap-1.5"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-600"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4h-4z"/></svg><p class="text-gray-600 text-xs font-medium">Base Pay</p></div><p id="admin-stat-basepay" class="text-xl font-bold text-gray-800">₱0</p></div>
+                <div class="glass-card text-center p-2 bg-amber-100/60"><div class="relative group flex items-center justify-center gap-1.5"><p class="text-amber-800 text-xs font-medium">Daily Bonus</p></div><p id="admin-stat-daily-bonus" class="text-xl font-bold text-amber-900">₱0</p></div>
+                <div class="glass-card text-center p-2 bg-amber-100/60"><div class="relative group flex items-center justify-center gap-1.5"><p class="text-amber-800 text-xs font-medium">Weekly Bonus</p></div><p id="admin-stat-weekly-bonus" class="text-xl font-bold text-amber-900">₱0</p></div>
+                <div class="glass-card text-center p-2 bg-amber-100/60"><div class="relative group flex items-center justify-center gap-1.5"><p class="text-amber-800 text-xs font-medium">Monthly Bonus</p></div><p id="admin-stat-monthly-bonus" class="text-xl font-bold text-amber-900">₱0</p></div>
+                <div class="glass-card text-center p-2 col-span-2 bg-purple-200/60"><div class="flex items-center justify-center gap-1.5"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-purple-800"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg><p class="text-purple-800 text-xs font-medium">Total Payout</p></div><p id="admin-stat-total" class="text-xl font-bold text-purple-900">₱0</p></div>
+            </div>
+
+            <div class="glass-card">
+                <h2 class="text-xl font-bold text-gray-700 mb-4 px-4 pt-4 lg:px-6 lg:pt-6">Seller Logs</h2>
+                <div class="w-full">
+                    <table class="logs-table w-full text-left">
+                        <thead>
+                            <tr>
+                                <th class="p-3 font-semibold text-gray-700 text-sm">Date & Duration</th>
+                                <th class="p-3 font-semibold text-gray-700 text-sm">Items Sold</th>
+                                <th class="p-3 font-semibold text-gray-700 text-sm">Payout Details</th>
+                                <th class="p-3 font-semibold text-gray-700 text-sm">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-logs-table">
+                            <!-- JS will populate this -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- User Management Page -->
+        <div id="user-management-page" class="hidden w-full">
+            <div class="flex justify-between items-center mb-4">
+                <h1 class="text-3xl font-bold text-gray-800">Users</h1>
+                <button id="back-to-admin-dash-btn" class="flex items-center gap-2 text-gray-600 hover:text-pink-500 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                    <span>Back</span>
+                </button>
+            </div>
+            <div class="glass-card p-4">
+                 <div class="flex justify-end mb-4">
+                    <button id="add-new-user-btn" class="flex items-center gap-2 bg-pink-500 text-white font-semibold py-2 px-4 rounded-lg hover:bg-pink-600 transition-all shadow">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="17" y1="11" x2="23" y2="11"/></svg>
+                        <span>Add New User</span>
+                    </button>
+                </div>
+                <table class="users-table w-full text-left">
+                    <thead>
+                        <tr>
+                            <th class="p-3 font-semibold text-gray-700 text-sm">Name</th>
+                            <th class="p-3 font-semibold text-gray-700 text-sm">Role</th>
+                            <th class="p-3 font-semibold text-gray-700 text-sm">Status</th>
+                            <th class="p-3 font-semibold text-gray-700 text-sm">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="user-list-table">
+                        <!-- User list populated by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Modals -->
+        <!-- Log Entry/Edit Modal -->
+        <div id="log-entry-modal" class="hidden fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+             <div class="glass-card w-full max-w-lg relative p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 id="log-modal-title" class="text-2xl font-bold text-gray-700">Log Entry</h2>
+                    <button id="close-log-entry-modal" class="text-gray-500 hover:text-gray-800 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </button>
+                </div>
+                <div id="log-modal-seller-name" class="hidden text-sm font-medium text-gray-600 mb-4"></div>
+                <form id="log-entry-form" class="space-y-4">
+                    <input type="hidden" id="log-id" />
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600 mb-1">Start</label>
+                            <input id="start-time" type="datetime-local" class="w-full p-2 rounded-lg border-white/40 bg-white/50 focus:ring-pink-500 focus:border-pink-500" required />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600 mb-1">End</label>
+                            <input id="end-time" type="datetime-local" class="w-full p-2 rounded-lg border-white/40 bg-white/50 focus:ring-pink-500 focus:border-pink-500" required />
+                        </div>
+                    </div>
+                     <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-1">Duration</label>
+                        <input id="duration" type="text" value="0h 0m" class="w-full p-2 rounded-lg border-white/40 bg-gray-200/50 cursor-not-allowed text-gray-500" readonly />
+                    </div>
+                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600 mb-1">Branded Sold</label>
+                            <input id="branded-sold" type="number" placeholder="0" min="0" class="w-full p-2 rounded-lg border-white/40 bg-white/50 focus:ring-pink-500 focus:border-pink-500" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600 mb-1">Free Size Sold</label>
+                            <input id="free-size-sold" type="number" placeholder="0" min="0" class="w-full p-2 rounded-lg border-white/40 bg-white/50 focus:ring-pink-500 focus:border-pink-500" />
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-1">Image Upload (Optional)</label>
+                        <input id="image-upload" type="file" accept="image/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-pink-100 file:text-pink-700 hover:file:bg-pink-200 transition-colors" />
+                    </div>
+                    <button type="submit" class="w-full bg-pink-500 text-white font-bold py-3 px-4 rounded-xl hover:bg-pink-600 transition-all duration-300 transform hover:scale-105 shadow-md mt-6">
+                        Submit Log
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Bonus Configuration Modal -->
+        <div id="bonus-config-modal" class="hidden fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+             <div class="glass-card w-full max-w-lg relative p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-gray-700">Bonus Configuration</h2>
+                    <button id="close-bonus-config-modal" class="text-gray-500 hover:text-gray-800 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </button>
+                </div>
+                <form id="bonus-config-form" class="space-y-4">
+                    <div>
+                        <label for="bonus-type-select" class="block text-sm font-medium text-gray-600 mb-1">Bonus Type</label>
+                        <select id="bonus-type-select" class="w-full p-2 rounded-lg border-white/40 bg-white/50 focus:ring-pink-500 focus:border-pink-500">
+                            <option value="daily">Daily</option>
+                            <option value="weekly">Weekly</option>
+                            <option value="monthly">Monthly</option>
+                        </select>
+                    </div>
+                    <p class="text-sm font-medium text-gray-600 pt-2">Targets</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600 mb-1">Min Duration (hours)</label>
+                            <input id="target-duration" type="number" placeholder="e.g., 8" min="0" class="w-full p-2 rounded-lg border-white/40 bg-white/50 focus:ring-pink-500 focus:border-pink-500" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600 mb-1">Min Branded Sold</label>
+                            <input id="target-branded" type="number" placeholder="e.g., 5" min="0" class="w-full p-2 rounded-lg border-white/40 bg-white/50 focus:ring-pink-500 focus:border-pink-500" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600 mb-1">Min Free Size Sold</label>
+                            <input id="target-freesize" type="number" placeholder="e.g., 10" min="0" class="w-full p-2 rounded-lg border-white/40 bg-white/50 focus:ring-pink-500 focus:border-pink-500" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600 mb-1">Bonus Amount (₱)</label>
+                            <input id="bonus-amount" type="number" placeholder="e.g., 150" min="0" class="w-full p-2 rounded-lg border-white/40 bg-white/50 focus:ring-pink-500 focus:border-pink-500" />
+                        </div>
+                    </div>
+                    <button type="submit" class="w-full bg-blue-500 text-white font-bold py-3 px-4 rounded-xl hover:bg-blue-600 transition-all duration-300 transform hover:scale-105 shadow-md mt-6">
+                        Save Configuration
+                    </button>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Add/Edit User Modal -->
+        <div id="user-modal" class="hidden fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+             <div class="glass-card w-full max-w-md relative p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 id="user-modal-title" class="text-2xl font-bold text-gray-700">Add User</h2>
+                    <button id="close-user-modal" class="text-gray-500 hover:text-gray-800 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </button>
+                </div>
+                <form id="user-form" class="space-y-4">
+                    <input type="hidden" id="user-id" />
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-1">Full Name</label>
+                        <input id="user-name" type="text" class="w-full p-2 rounded-lg border-white/40 bg-white/50 focus:ring-pink-500 focus:border-pink-500" required />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-1">Role</label>
+                        <select id="user-role" class="w-full p-2 rounded-lg border-white/40 bg-white/50 focus:ring-pink-500 focus:border-pink-500">
+                            <option value="seller">Seller</option>
+                            <option value="admin">Admin</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="w-full bg-pink-500 text-white font-bold py-3 px-4 rounded-xl hover:bg-pink-600 transition-all duration-300 transform hover:scale-105 shadow-md mt-6">
+                        Save User
+                    </button>
+                    <button type="button" id="reset-password-btn" class="w-full bg-gray-500 text-white font-bold py-3 px-4 rounded-xl hover:bg-gray-600 transition-all">
+                        Reset Password
+                    </button>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Seller Profile Modal -->
+        <div id="profile-modal" class="hidden fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+             <div class="glass-card w-full max-w-md relative p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-gray-700">My Profile</h2>
+                    <button id="close-profile-modal" class="text-gray-500 hover:text-gray-800 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </button>
+                </div>
+                <form id="profile-form" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-1">Full Name</label>
+                        <input id="profile-name" type="text" class="w-full p-2 rounded-lg border-white/40 bg-white/50 focus:ring-pink-500 focus:border-pink-500" />
+                    </div>
+                     <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-1">Phone Number</label>
+                        <input id="profile-phone" type="tel" class="w-full p-2 rounded-lg border-white/40 bg-white/50 focus:ring-pink-500 focus:border-pink-500" />
+                    </div>
+                     <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-1">Gcash Number</label>
+                        <input id="profile-gcash" type="tel" class="w-full p-2 rounded-lg border-white/40 bg-white/50 focus:ring-pink-500 focus:border-pink-500" />
+                    </div>
+                    
+                    <div class="pt-4 border-t border-white/30">
+                        <p class="text-sm font-medium text-gray-800">Change Password</p>
+                        <div class="mt-2 space-y-4">
+                             <div>
+                                <label class="block text-sm font-medium text-gray-600 mb-1">Current Password</label>
+                                <input id="profile-current-password" type="password" class="w-full p-2 rounded-lg border-white/40 bg-white/50 focus:ring-pink-500 focus:border-pink-500" />
+                            </div>
+                             <div>
+                                <label class="block text-sm font-medium text-gray-600 mb-1">New Password</label>
+                                <input id="profile-new-password" type="password" class="w-full p-2 rounded-lg border-white/40 bg-white/50 focus:ring-pink-500 focus:border-pink-500" />
+                            </div>
+                             <div>
+                                <label class="block text-sm font-medium text-gray-600 mb-1">Confirm New Password</label>
+                                <input id="profile-confirm-password" type="password" class="w-full p-2 rounded-lg border-white/40 bg-white/50 focus:ring-pink-500 focus:border-pink-500" />
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="w-full bg-pink-500 text-white font-bold py-3 px-4 rounded-xl hover:bg-pink-600 transition-all duration-300 transform hover:scale-105 shadow-md mt-6">
+                        Save Changes
+                    </button>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- MOCK DATA ---
+            const mockUsers = [
+                { id: 1, name: 'Alice', role: 'seller', status: 'active', phone: '09171234567', gcash: '09171234567' },
+                { id: 2, name: 'Bob', role: 'seller', status: 'active', phone: '09177654321', gcash: '09177654321' },
+                { id: 3, name: 'Charlie', role: 'seller', status: 'inactive', phone: '09178889999', gcash: '09178889999' },
+            ];
+            const mockLogs = [
+                { id: 1, sellerId: 1, startDate: "2025-08-06T09:00", endDate: "2025-08-06T17:00", duration: "8h 0m", brandedSold: 7, freeSizeSold: 11, basePay: 500, dailyBonus: 50, weeklyBonus: 0, monthlyBonus: 0 },
+                { id: 2, sellerId: 2, startDate: "2025-08-06T09:05", endDate: "2025-08-06T17:15", duration: "8h 10m", brandedSold: 9, freeSizeSold: 8, basePay: 500, dailyBonus: 65, weeklyBonus: 0, monthlyBonus: 0 },
+                { id: 3, sellerId: 1, startDate: "2025-08-05T09:03", endDate: "2025-08-05T17:05", duration: "8h 2m", brandedSold: 5, freeSizeSold: 12, basePay: 500, dailyBonus: 25, weeklyBonus: 0, monthlyBonus: 0 },
+                { id: 4, sellerId: 3, startDate: "2025-08-05T09:00", endDate: "2025-08-05T17:00", duration: "8h 0m", brandedSold: 12, freeSizeSold: 15, basePay: 500, dailyBonus: 100, weeklyBonus: 0, monthlyBonus: 0 },
+                { id: 5, sellerId: 2, startDate: "2025-08-04T08:58", endDate: "2025-08-04T17:01", duration: "8h 3m", brandedSold: 8, freeSizeSold: 10, basePay: 500, dailyBonus: 60, weeklyBonus: 200, monthlyBonus: 0 },
+                { id: 6, sellerId: 1, startDate: "2025-07-30T09:10", endDate: "2025-07-30T17:15", duration: "8h 5m", brandedSold: 10, freeSizeSold: 8, basePay: 500, dailyBonus: 70, weeklyBonus: 0, monthlyBonus: 1000 },
+            ];
+
+            // --- DOM Elements ---
+            const loginScreen = document.getElementById('login-screen');
+            const sellerDashboard = document.getElementById('seller-dashboard');
+            const adminDashboard = document.getElementById('admin-dashboard');
+            const userManagementPage = document.getElementById('user-management-page');
+            const loginSellerBtn = document.getElementById('login-seller');
+            const loginAdminBtn = document.getElementById('login-admin');
+            const logoutBtns = document.querySelectorAll('.logout-btn');
+            
+            // Seller UI
+            const openLogEntryModalBtn = document.getElementById('open-log-entry-modal');
+            const dateFilterButtons = document.getElementById('date-filter-buttons');
+            const customDateFilter = document.getElementById('custom-date-filter');
+            const startDateInput = document.getElementById('start-date-input');
+            const endDateInput = document.getElementById('end-date-input');
+            const logsTableBody = document.getElementById('previous-logs-table');
+            const openProfileModalBtn = document.getElementById('open-profile-modal-btn');
+
+            // Admin UI
+            const sellerFilter = document.getElementById('seller-filter');
+            const adminDateFilterButtons = document.getElementById('admin-date-filter-buttons');
+            const adminCustomDateFilter = document.getElementById('admin-custom-date-filter');
+            const adminStartDateInput = document.getElementById('admin-start-date-input');
+            const adminEndDateInput = document.getElementById('admin-end-date-input');
+            const adminLogsTableBody = document.getElementById('admin-logs-table');
+            const openBonusConfigModalBtn = document.getElementById('open-bonus-config-modal');
+            const openUserManagementBtn = document.getElementById('open-user-management-btn');
+            const backToAdminDashBtn = document.getElementById('back-to-admin-dash-btn');
+            const userListTable = document.getElementById('user-list-table');
+            const addNewUserBtn = document.getElementById('add-new-user-btn');
+
+            // Modals
+            const logEntryModal = document.getElementById('log-entry-modal');
+            const closeLogEntryModalBtn = document.getElementById('close-log-entry-modal');
+            const logEntryForm = document.getElementById('log-entry-form');
+            const logModalTitle = document.getElementById('log-modal-title');
+            const logModalSellerName = document.getElementById('log-modal-seller-name');
+            const bonusConfigModal = document.getElementById('bonus-config-modal');
+            const closeBonusConfigModalBtn = document.getElementById('close-bonus-config-modal');
+            const userModal = document.getElementById('user-modal');
+            const userModalTitle = document.getElementById('user-modal-title');
+            const closeUserModalBtn = document.getElementById('close-user-modal');
+            const userForm = document.getElementById('user-form');
+            const resetPasswordBtn = document.getElementById('reset-password-btn');
+            const profileModal = document.getElementById('profile-modal');
+            const closeProfileModalBtn = document.getElementById('close-profile-modal');
+            const profileForm = document.getElementById('profile-form');
+
+            // --- Functions ---
+            function hideAllScreens() {
+                if(loginScreen) loginScreen.classList.add('hidden');
+                if(sellerDashboard) sellerDashboard.classList.add('hidden');
+                if(adminDashboard) adminDashboard.classList.add('hidden');
+                if(userManagementPage) userManagementPage.classList.add('hidden');
+            }
+
+            function handleLogin(userType) {
+                hideAllScreens();
+                if (userType === 'seller') {
+                    if(sellerDashboard) sellerDashboard.classList.remove('hidden');
+                    document.querySelector('#date-filter-buttons .filter-btn[data-filter="this-week"]')?.click();
+                } else if (userType === 'admin') {
+                    if(adminDashboard) adminDashboard.classList.remove('hidden');
+                    populateSellerFilter();
+                    document.querySelector('#admin-date-filter-buttons .filter-btn[data-filter="this-week"]')?.click();
+                }
+            }
+            
+            function populateSellerFilter() {
+                if(!sellerFilter) return;
+                sellerFilter.innerHTML = '<option value="all">All Sellers</option>';
+                mockUsers.filter(u => u.role === 'seller').forEach(seller => {
+                    const option = document.createElement('option');
+                    option.value = seller.id;
+                    option.textContent = seller.name;
+                    sellerFilter.appendChild(option);
+                });
+            }
+
+            function handleLogout() {
+                hideAllScreens();
+                if(loginScreen) loginScreen.classList.remove('hidden');
+            }
+            
+            function calculateDuration() {
+                const startTimeInput = document.getElementById('start-time');
+                const endTimeInput = document.getElementById('end-time');
+                const durationInput = document.getElementById('duration');
+                if (startTimeInput && endTimeInput && durationInput && startTimeInput.value && endTimeInput.value) {
+                    const start = new Date(startTimeInput.value);
+                    const end = new Date(endTimeInput.value);
+                    if (end > start) {
+                        let diff = (end.getTime() - start.getTime()) / 1000 / 60;
+                        const hours = Math.floor(diff / 60);
+                        const minutes = Math.round(diff % 60);
+                        durationInput.value = `${hours}h ${minutes}m`;
+                    } else {
+                        durationInput.value = 'Invalid range';
+                    }
+                } else if(durationInput) {
+                    durationInput.value = '0h 0m';
+                }
+            }
+            
+            function formatDate(date) {
+                return date.toISOString().split('T')[0];
+            }
+            
+            function formatShortDate(dateString) {
+                const date = new Date(dateString);
+                return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            }
+
+            function renderLogs(logs, targetTable, userType = 'seller') {
+                if(!targetTable) return;
+                targetTable.innerHTML = '';
+                if (logs.length === 0) {
+                    const row = targetTable.insertRow();
+                    const cell = row.insertCell();
+                    cell.colSpan = userType === 'admin' ? 4 : 3;
+                    cell.className = 'text-center p-4 text-gray-500';
+                    cell.textContent = 'No logs found for this period.';
+                    return;
+                }
+                logs.forEach(log => {
+                    const row = targetTable.insertRow();
+                    const totalBonus = log.dailyBonus + log.weeklyBonus + log.monthlyBonus;
+                    const totalPayout = log.basePay + totalBonus;
+                    let actionsHtml = '';
+                    if (userType === 'admin') {
+                        actionsHtml = `<td class="align-top"><button class="edit-log-btn p-1 text-blue-600 hover:text-blue-800" data-log-id="${log.id}"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button></td>`;
+                    }
+                    row.innerHTML = `
+                        <td class="align-top">
+                            <div class="font-bold text-gray-800">${formatShortDate(log.startDate)}</div>
+                            <div class="text-xs text-gray-600">${log.duration}</div>
+                        </td>
+                        <td class="align-top">
+                            <div class="text-sm"><span class="font-medium text-gray-600">Branded:</span> ${log.brandedSold}</div>
+                            <div class="text-sm"><span class="font-medium text-gray-600">Free Size:</span> ${log.freeSizeSold}</div>
+                        </td>
+                        <td class="align-top">
+                            <div class="text-sm text-gray-700">Base: ₱${log.basePay}</div>
+                            <div class="text-sm text-gray-700">Bonus: ₱${totalBonus}</div>
+                            <div class="font-bold text-gray-900 mt-1">Total: ₱${totalPayout}</div>
+                        </td>
+                        ${actionsHtml}
+                    `;
+                });
+            }
+            
+            function updateStatCards(logs, userType = 'seller') {
+                const totals = logs.reduce((acc, log) => {
+                    acc.branded += log.brandedSold;
+                    acc.freeSize += log.freeSizeSold;
+                    acc.basePay += log.basePay;
+                    acc.dailyBonus += log.dailyBonus;
+                    acc.weeklyBonus += log.weeklyBonus;
+                    acc.monthlyBonus += log.monthlyBonus;
+                    return acc;
+                }, { branded: 0, freeSize: 0, basePay: 0, dailyBonus: 0, weeklyBonus: 0, monthlyBonus: 0 });
+
+                totals.totalPayout = totals.basePay + totals.dailyBonus + totals.weeklyBonus + totals.monthlyBonus;
+                
+                const prefix = userType === 'admin' ? 'admin-' : '';
+
+                document.getElementById(`${prefix}stat-branded`).textContent = totals.branded;
+                document.getElementById(`${prefix}stat-freesize`).textContent = totals.freeSize;
+                document.getElementById(`${prefix}stat-basepay`).textContent = `₱${totals.basePay.toLocaleString()}`;
+                document.getElementById(`${prefix}stat-daily-bonus`).textContent = `₱${totals.dailyBonus.toLocaleString()}`;
+                document.getElementById(`${prefix}stat-weekly-bonus`).textContent = `₱${totals.weeklyBonus.toLocaleString()}`;
+                document.getElementById(`${prefix}stat-monthly-bonus`).textContent = `₱${totals.monthlyBonus.toLocaleString()}`;
+                document.getElementById(`${prefix}stat-total`).textContent = `₱${totals.totalPayout.toLocaleString()}`;
+            }
+
+            function applyFilter(userType) {
+                const is_admin = userType === 'admin';
+                const startInput = is_admin ? adminStartDateInput : startDateInput;
+                const endInput = is_admin ? adminEndDateInput : endDateInput;
+                const tableBody = is_admin ? adminLogsTableBody : logsTableBody;
+                
+                if (!startInput || !endInput || !startInput.value || !endInput.value) return;
+
+                const startDate = new Date(startInput.value);
+                const endDate = new Date(endInput.value);
+                endDate.setDate(endDate.getDate() + 1);
+
+                let filteredLogs = mockLogs.filter(log => {
+                    const logDate = new Date(log.startDate);
+                    return logDate >= startDate && logDate < endDate;
+                });
+                
+                if (is_admin) {
+                    const selectedSellerId = sellerFilter.value;
+                    if (selectedSellerId !== 'all') {
+                        filteredLogs = filteredLogs.filter(log => log.sellerId == selectedSellerId);
+                    }
+                } else {
+                    // For simplicity, we'll assign seller 1 to the seller dashboard view
+                    filteredLogs = filteredLogs.filter(log => log.sellerId === 1);
+                }
+
+                renderLogs(filteredLogs, tableBody, userType);
+                updateStatCards(filteredLogs, userType);
+            }
+
+            function handleDateFilterClick(e, userType) {
+                const clickedButton = e.target.closest('.filter-btn');
+                if (!clickedButton) return;
+                
+                const is_admin = userType === 'admin';
+                const filterButtons = is_admin ? adminDateFilterButtons : dateFilterButtons;
+                const customFilter = is_admin ? adminCustomDateFilter : customDateFilter;
+                const startInput = is_admin ? adminStartDateInput : startDateInput;
+                const endInput = is_admin ? adminEndDateInput : endDateInput;
+
+                if(!filterButtons || !customFilter || !startInput || !endInput) return;
+
+                filterButtons.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+                clickedButton.classList.add('active');
+
+                const filterType = clickedButton.dataset.filter;
+                
+                if (filterType === 'custom') {
+                    customFilter.classList.remove('hidden');
+                    return;
+                }
+                
+                customFilter.classList.add('hidden');
+                const today = new Date("2025-08-06T12:00:00");
+                let startDate, endDate;
+                const dayOfWeek = today.getDay(); 
+                const diffToWednesday = (dayOfWeek < 3) ? dayOfWeek + 4 : dayOfWeek - 3;
+                const thisWeekStart = new Date(today);
+                thisWeekStart.setDate(today.getDate() - diffToWednesday);
+                thisWeekStart.setHours(0, 0, 0, 0);
+
+                if (filterType === 'this-week') {
+                    startDate = new Date(thisWeekStart);
+                    endDate = new Date(startDate);
+                    endDate.setDate(startDate.getDate() + 7);
+                } else if (filterType === 'last-week') {
+                    startDate = new Date(thisWeekStart);
+                    startDate.setDate(thisWeekStart.getDate() - 7);
+                    endDate = new Date(startDate);
+                    endDate.setDate(startDate.getDate() + 7);
+                }
+                
+                startInput.value = formatDate(startDate);
+                endInput.value = formatDate(new Date(endDate.getTime() - 1));
+                applyFilter(userType);
+            }
+
+            function openEditLogModal(logId) {
+                const log = mockLogs.find(l => l.id == logId);
+                if (!log) return;
+                const seller = mockUsers.find(s => s.id === log.sellerId);
+
+                logModalTitle.textContent = 'Edit Log';
+                logModalSellerName.textContent = `Seller: ${seller ? seller.name : 'Unknown'}`;
+                logModalSellerName.classList.remove('hidden');
+
+                document.getElementById('log-id').value = log.id;
+                document.getElementById('start-time').value = log.startDate;
+                document.getElementById('end-time').value = log.endDate;
+                document.getElementById('branded-sold').value = log.brandedSold;
+                document.getElementById('free-size-sold').value = log.freeSizeSold;
+                calculateDuration();
+                logEntryModal.classList.remove('hidden');
+            }
+            
+            function renderUsers() {
+                if(!userListTable) return;
+                userListTable.innerHTML = '';
+                mockUsers.forEach(user => {
+                    const row = userListTable.insertRow();
+                    const statusClass = user.status === 'active' ? 'text-green-700' : 'text-red-700';
+                    row.innerHTML = `
+                        <td class="align-top">
+                            <div class="font-bold text-gray-800">${user.name}</div>
+                        </td>
+                        <td class="align-top text-sm capitalize text-gray-600">${user.role}</td>
+                        <td class="align-top text-sm capitalize font-medium ${statusClass}">${user.status}</td>
+                        <td class="align-top">
+                            <div class="flex items-center gap-2">
+                                <button class="edit-user-btn p-1 text-blue-600 hover:text-blue-800" data-user-id="${user.id}"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+                                <button class="deactivate-user-btn p-1 text-red-600 hover:text-red-800" data-user-id="${user.id}"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg></button>
+                            </div>
+                        </td>
+                    `;
+                });
+            }
+            
+            function openUserModal(userId = null) {
+                if(!userForm || !userModal) return;
+                userForm.reset();
+                if (userId) {
+                    const user = mockUsers.find(u => u.id === userId);
+                    if (user) {
+                        userModalTitle.textContent = 'Edit User';
+                        document.getElementById('user-id').value = user.id;
+                        document.getElementById('user-name').value = user.name;
+                        document.getElementById('user-role').value = user.role;
+                        resetPasswordBtn.classList.remove('hidden');
+                    }
+                } else {
+                    userModalTitle.textContent = 'Add New User';
+                    resetPasswordBtn.classList.add('hidden');
+                }
+                userModal.classList.remove('hidden');
+            }
+            
+            function openProfileModal() {
+                if(!profileModal) return;
+                // Assuming current user is Alice (id: 1) for demo
+                const currentUser = mockUsers.find(u => u.id === 1);
+                if (currentUser) {
+                    document.getElementById('profile-name').value = currentUser.name;
+                    document.getElementById('profile-phone').value = currentUser.phone;
+                    document.getElementById('profile-gcash').value = currentUser.gcash;
+                }
+                profileModal.classList.remove('hidden');
+            }
+
+            // --- Event Listeners ---
+            if(loginSellerBtn) loginSellerBtn.addEventListener('click', () => handleLogin('seller'));
+            if(loginAdminBtn) loginAdminBtn.addEventListener('click', () => handleLogin('admin'));
+            logoutBtns.forEach(btn => {
+                if(btn) btn.addEventListener('click', handleLogout);
+            });
+
+            // Seller Listeners
+            if(dateFilterButtons) dateFilterButtons.addEventListener('click', (e) => handleDateFilterClick(e, 'seller'));
+            if(startDateInput) startDateInput.addEventListener('change', () => applyFilter('seller'));
+            if(endDateInput) endDateInput.addEventListener('change', () => applyFilter('seller'));
+            if(openLogEntryModalBtn) openLogEntryModalBtn.addEventListener('click', () => {
+                logModalTitle.textContent = 'Log Entry';
+                logModalSellerName.classList.add('hidden');
+                logEntryForm.reset();
+                if(document.getElementById('duration')) document.getElementById('duration').value = '0h 0m';
+                logEntryModal.classList.remove('hidden');
+            });
+            if(openProfileModalBtn) openProfileModalBtn.addEventListener('click', openProfileModal);
+            
+            // Admin Listeners
+            if(adminDateFilterButtons) adminDateFilterButtons.addEventListener('click', (e) => handleDateFilterClick(e, 'admin'));
+            if(adminStartDateInput) adminStartDateInput.addEventListener('change', () => applyFilter('admin'));
+            if(adminEndDateInput) adminEndDateInput.addEventListener('change', () => applyFilter('admin'));
+            if(sellerFilter) sellerFilter.addEventListener('change', () => applyFilter('admin'));
+            if(adminLogsTableBody) adminLogsTableBody.addEventListener('click', (e) => {
+                const editBtn = e.target.closest('.edit-log-btn');
+                if (editBtn) {
+                    openEditLogModal(editBtn.dataset.logId);
+                }
+            });
+            if(openUserManagementBtn) openUserManagementBtn.addEventListener('click', () => {
+                adminDashboard.classList.add('hidden');
+                userManagementPage.classList.remove('hidden');
+                renderUsers();
+            });
+            if(backToAdminDashBtn) backToAdminDashBtn.addEventListener('click', () => {
+                userManagementPage.classList.add('hidden');
+                adminDashboard.classList.remove('hidden');
+            });
+            if(addNewUserBtn) addNewUserBtn.addEventListener('click', () => openUserModal());
+            if(userListTable) userListTable.addEventListener('click', (e) => {
+                const editBtn = e.target.closest('.edit-user-btn');
+                if (editBtn) {
+                    openUserModal(parseInt(editBtn.dataset.userId));
+                }
+                // Add logic for deactivate button if needed
+            });
+
+            // Modal Listeners
+            if(closeLogEntryModalBtn) closeLogEntryModalBtn.addEventListener('click', () => logEntryModal.classList.add('hidden'));
+            if(logEntryModal) logEntryModal.addEventListener('click', (e) => {
+                if (e.target === logEntryModal) logEntryModal.classList.add('hidden');
+            });
+            if(logEntryForm) logEntryForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                console.log('Submitting Log Data...');
+                logEntryForm.reset();
+                logEntryModal.classList.add('hidden');
+            });
+            if(openBonusConfigModalBtn) openBonusConfigModalBtn.addEventListener('click', () => bonusConfigModal.classList.remove('hidden'));
+            if(closeBonusConfigModalBtn) closeBonusConfigModalBtn.addEventListener('click', () => bonusConfigModal.classList.add('hidden'));
+            if(bonusConfigModal) bonusConfigModal.addEventListener('click', (e) => {
+                if (e.target === bonusConfigModal) bonusConfigModal.classList.add('hidden');
+            });
+            if(closeUserModalBtn) closeUserModalBtn.addEventListener('click', () => userModal.classList.add('hidden'));
+            if(userModal) userModal.addEventListener('click', (e) => {
+                if(e.target === userModal) userModal.classList.add('hidden');
+            });
+            if(userForm) userForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                console.log('Saving user data...');
+                userForm.reset();
+                userModal.classList.add('hidden');
+            });
+            if(resetPasswordBtn) resetPasswordBtn.addEventListener('click', () => {
+                const userId = document.getElementById('user-id').value;
+                console.log(`Password for user ID ${userId} has been reset to "Password".`);
+                userModal.classList.add('hidden');
+            });
+            if(closeProfileModalBtn) closeProfileModalBtn.addEventListener('click', () => profileModal.classList.add('hidden'));
+            if(profileModal) profileModal.addEventListener('click', (e) => {
+                if(e.target === profileModal) profileModal.classList.add('hidden');
+            });
+            if(profileForm) profileForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                console.log('Saving profile data...');
+                profileForm.reset();
+                profileModal.classList.add('hidden');
+            });
+
+        });
+    </script>
+</body>
+</html>
