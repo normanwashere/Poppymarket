@@ -1,0 +1,21 @@
+{
+  "name": "Poppy Market Dashboard",
+  "short_name": "PoppyDash",
+  "description": "A dashboard for Poppy Market sellers and administrators to track sales and payouts.",
+  "start_url": "/Poppy-3.html",
+  "display": "standalone",
+  "background_color": "#fdf2f8",
+  "theme_color": "#ec4899",
+  "icons": [
+    {
+      "src": "https://placehold.co/192x192/ec4899/ffffff?text=Poppy",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://placehold.co/512x512/ec4899/ffffff?text=Poppy",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
