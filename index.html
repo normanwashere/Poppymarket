@@ -81,6 +81,51 @@
         #notification-toast.show {
             transform: translateX(-50%) translateY(0);
         }
+
+        /* --- Skeleton Loader --- */
+        .skeleton {
+            background-color: rgba(255, 255, 255, 0.55);
+            position: relative;
+            overflow: hidden;
+        }
+        .skeleton::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            transform: translateX(-100%);
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            animation: shimmer 1.5s infinite;
+        }
+        @keyframes shimmer {
+            100% {
+                transform: translateX(100%);
+            }
+        }
+        
+        /* --- Stat Card Skeleton --- */
+        .stat-skeleton .stat-value {
+            background-color: rgba(255, 255, 255, 0.6);
+            border-radius: 0.5rem;
+            min-height: 28px; /* Or match your text height */
+            width: 60%;
+            margin: 0 auto;
+            position: relative;
+            overflow: hidden;
+        }
+        .stat-skeleton .stat-value::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            transform: translateX(-100%);
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.5), transparent);
+            animation: shimmer 1.5s infinite;
+        }
     </style>
 </head>
 <body class="bg-gradient-to-br from-pink-200 via-rose-100 to-stone-200 min-h-screen w-full">
@@ -214,7 +259,7 @@
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
                 <!-- Stat Cards -->
                 <div class="glass-card text-center p-2"><div class="flex items-center justify-center gap-1.5"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-pink-600"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg><p class="text-gray-600 text-xs font-medium">Branded</p></div><p id="stat-branded" class="text-2xl font-bold text-gray-800">0</p></div>
-                <div class="glass-card text-center p-2"><div class="flex items-center justify-center gap-1.5"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-teal-600"><path d="M20.38 3.46 16 2a4 4 0 0 0-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"/></svg><p class="text-gray-600 text-xs font-medium">Free Size</p></div><p id="stat-freesize" class="text-2xl font-bold text-gray-800">0</p></div>
+                <div class="glass-card text-center p-2"><div class="flex items-center justify-center gap-1.5"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-teal-600"><path d="M20.38 3.46 16 2a4 4 0 0 0-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99 .84H6v10c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"/></svg><p class="text-gray-600 text-xs font-medium">Free Size</p></div><p id="stat-freesize" class="text-2xl font-bold text-gray-800">0</p></div>
                 <div class="glass-card text-center p-2"><div class="flex items-center justify-center gap-1.5"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-600"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4h-4z"/></svg><p class="text-gray-600 text-xs font-medium">Base Pay</p></div><p id="stat-basepay" class="text-xl font-bold text-gray-800">₱0</p></div>
                 
                 <!-- Bonus Cards -->
@@ -326,7 +371,7 @@
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
                 <!-- Admin Stat Cards -->
                 <div class="glass-card text-center p-2"><div class="flex items-center justify-center gap-1.5"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-pink-600"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg><p class="text-gray-600 text-xs font-medium">Branded</p></div><p id="admin-stat-branded" class="text-2xl font-bold text-gray-800">0</p></div>
-                <div class="glass-card text-center p-2"><div class="flex items-center justify-center gap-1.5"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-teal-600"><path d="M20.38 3.46 16 2a4 4 0 0 0-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"/></svg><p class="text-gray-600 text-xs font-medium">Free Size</p></div><p id="admin-stat-freesize" class="text-2xl font-bold text-gray-800">0</p></div>
+                <div class="glass-card text-center p-2"><div class="flex items-center justify-center gap-1.5"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-teal-600"><path d="M20.38 3.46 16 2a4 4 0 0 0-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99 .84H6v10c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"/></svg><p class="text-gray-600 text-xs font-medium">Free Size</p></div><p id="admin-stat-freesize" class="text-2xl font-bold text-gray-800">0</p></div>
                 <div class="glass-card text-center p-2"><div class="flex items-center justify-center gap-1.5"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-600"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4h-4z"/></svg><p class="text-gray-600 text-xs font-medium">Base Pay</p></div><p id="admin-stat-basepay" class="text-xl font-bold text-gray-800">₱0</p></div>
                 <div class="glass-card text-center p-2 bg-amber-100/60"><div class="relative group flex items-center justify-center gap-1.5"><p class="text-amber-800 text-xs font-medium">Daily Bonus</p></div><p id="admin-stat-daily-bonus" class="text-xl font-bold text-amber-900">₱0</p></div>
                 <div class="glass-card text-center p-2 bg-amber-100/60"><div class="relative group flex items-center justify-center gap-1.5"><p class="text-amber-800 text-xs font-medium">Weekly Bonus</p></div><p id="admin-stat-weekly-bonus" class="text-xl font-bold text-amber-900">₱0</p></div>
@@ -694,11 +739,10 @@
                 }
 
                 let profile = null;
-                // Patiently retry fetching the profile to handle the race condition
                 for (let i = 0; i < 5; i++) {
                     profile = await fetchUserProfile(session.user);
                     if (profile) break;
-                    await new Promise(res => setTimeout(res, 500)); // Wait 500ms before retrying
+                    await new Promise(res => setTimeout(res, 500));
                 }
                 
                 if (!profile) {
@@ -719,7 +763,8 @@
 
                 if (currentUserProfile.role === 'admin') {
                     adminDashboard.classList.remove('hidden');
-                    await populateSellerFilter();
+                    // FIX: Wait for the filter to be populated before triggering the data load
+                    await populateSellerFilter(); 
                     document.querySelector('#admin-date-filter-buttons .filter-btn[data-filter="this-week"]')?.click();
                 } else {
                     sellerDashboard.classList.remove('hidden');
@@ -729,7 +774,13 @@
             }
 
             async function populateSellerFilter() {
-                const { data, error } = await supabaseClient.from('profiles').select('id, full_name').order('full_name');
+                // FIX: Add .eq('role', 'seller') to exclude admins from the dropdown
+                const { data, error } = await supabaseClient
+                    .from('profiles')
+                    .select('id, full_name')
+                    .eq('role', 'seller')
+                    .order('full_name');
+
                 if (error) {
                     showNotification('Failed to load sellers.', true);
                     return;
@@ -738,7 +789,7 @@
                 data.forEach(seller => {
                     const option = document.createElement('option');
                     option.value = seller.id;
-                    option.textContent = seller.full_name || seller.email;
+                    option.textContent = seller.full_name || 'Unnamed Seller';
                     sellerFilter.appendChild(option);
                 });
             }
@@ -780,6 +831,29 @@
                 return localDate.toISOString().slice(0, 16);
             }
 
+            function renderSkeletonLogs(targetTable, rowCount = 3) {
+                targetTable.innerHTML = '';
+                for (let i = 0; i < rowCount; i++) {
+                    const row = targetTable.insertRow();
+                    row.innerHTML = `
+                        <td class="align-top">
+                            <div class="h-5 w-20 mb-2 rounded skeleton"></div>
+                            <div class="h-3 w-16 rounded skeleton"></div>
+                        </td>
+                        <td class="align-top">
+                            <div class="h-4 w-24 mb-2 rounded skeleton"></div>
+                            <div class="h-4 w-24 rounded skeleton"></div>
+                        </td>
+                        <td class="align-top">
+                            <div class="h-4 w-28 mb-2 rounded skeleton"></div>
+                            <div class="h-4 w-28 mb-2 rounded skeleton"></div>
+                            <div class="h-5 w-32 mt-1 rounded skeleton"></div>
+                        </td>
+                        ${targetTable.id.includes('admin') ? '<td class="align-top"><div class="h-8 w-8 rounded-full skeleton"></div></td>' : ''}
+                    `;
+                }
+            }
+
             async function renderLogs(logs, targetTable, userType = 'seller') {
                 targetTable.innerHTML = '';
                 if (!logs || logs.length === 0) {
@@ -793,8 +867,6 @@
                 
                 for (const log of logs) {
                     const row = targetTable.insertRow();
-                    
-                    // MODIFIED: Calculations are now done on the backend. We just display the results.
                     const totalBonus = (log.payout_daily_bonus || 0) + (log.payout_weekly_bonus || 0) + (log.payout_monthly_bonus || 0);
                     const totalPayout = (log.payout_base || 0) + totalBonus;
                     
@@ -803,7 +875,6 @@
                         actionsHtml = `<td class="align-top"><button class="edit-log-btn p-1 text-blue-600 hover:text-blue-800" data-log-id="${log.id}"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button></td>`;
                     }
                     
-                    // MODIFIED: Display the backend-calculated values
                     row.innerHTML = `
                         <td class="align-top">
                             <div class="font-bold text-gray-800">${formatShortDate(log.start_time)}</div>
@@ -822,63 +893,149 @@
                     `;
                 }
             }
-            
-            async function updateStatCards(userType) {
+
+            async function updateIndividualStatCards(userType) {
                 const is_admin = userType === 'admin';
+                const prefix = is_admin ? 'admin-' : '';
                 const startInput = is_admin ? adminStartDateInput : startDateInput;
                 const endInput = is_admin ? adminEndDateInput : endDateInput;
                 const selectedSellerId = is_admin ? sellerFilter.value : currentUserProfile.id;
 
-                if (!startInput.value || !endInput.value || !selectedSellerId) return;
-                
-                // MODIFIED: This RPC function is assumed to exist on the backend and perform the aggregation.
-                // It sums up the pre-calculated columns from `logged_sessions`.
-                const rpc_params = {
-                    p_start_date: startInput.value,
-                    p_end_date: endInput.value,
-                    p_seller_id: selectedSellerId === 'all' ? null : selectedSellerId
-                };
-
-                const { data, error } = await supabaseClient.rpc('get_seller_dashboard_stats', rpc_params);
-
-                if (error || !data || data.length === 0) {
-                    showNotification('Could not calculate stats.', true);
-                    console.error('Stat calculation error:', error);
-                    // Reset stats to 0 on error
-                    const prefix = is_admin ? 'admin-' : '';
-                    document.getElementById(`${prefix}stat-branded`).textContent = '0';
-                    document.getElementById(`${prefix}stat-freesize`).textContent = '0';
-                    document.getElementById(`${prefix}stat-basepay`).textContent = '₱0';
-                    document.getElementById(`${prefix}stat-daily-bonus`).textContent = '₱0';
-                    document.getElementById(`${prefix}stat-weekly-bonus`).textContent = '₱0';
-                    document.getElementById(`${prefix}stat-monthly-bonus`).textContent = '₱0';
-                    document.getElementById(`${prefix}stat-total`).textContent = '₱0';
+                if (!startInput.value || !endInput.value || !selectedSellerId) {
                     return;
                 }
 
-                const totals = data[0];
-                const prefix = is_admin ? 'admin-' : '';
+                try {
+                    const { data, error } = await supabaseClient.functions.invoke('calculate-bonuses', {
+                        body: {
+                            startDate: startInput.value,
+                            endDate: endInput.value,
+                            sellerId: selectedSellerId
+                        }
+                    });
 
-                document.getElementById(`${prefix}stat-branded`).textContent = totals.total_branded_sold || 0;
-                document.getElementById(`${prefix}stat-freesize`).textContent = totals.total_freesize_sold || 0;
-                document.getElementById(`${prefix}stat-basepay`).textContent = `₱${(totals.total_base_pay || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-                document.getElementById(`${prefix}stat-daily-bonus`).textContent = `₱${(totals.total_daily_bonus || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-                document.getElementById(`${prefix}stat-weekly-bonus`).textContent = `₱${(totals.total_weekly_bonus || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-                document.getElementById(`${prefix}stat-monthly-bonus`).textContent = `₱${(totals.total_monthly_bonus || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-                document.getElementById(`${prefix}stat-total`).textContent = `₱${(totals.final_total_payout || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+                    if (error) throw error;
+
+                    const formatCurrency = (num) => `₱${(num || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+                    document.getElementById(`${prefix}stat-basepay`).textContent = formatCurrency(data.basePay);
+                    document.getElementById(`${prefix}stat-daily-bonus`).textContent = formatCurrency(data.dailyBonus);
+                    document.getElementById(`${prefix}stat-weekly-bonus`).textContent = formatCurrency(data.weeklyBonus);
+                    document.getElementById(`${prefix}stat-monthly-bonus`).textContent = formatCurrency(data.monthlyBonus);
+                    document.getElementById(`${prefix}stat-total`).textContent = formatCurrency(data.totalPayout);
+
+                } catch (err) {
+                    let errorMessage = err.message || 'An unknown error occurred.';
+                    if (err.context && typeof err.context.json === 'function') {
+                        try {
+                            const errorBody = await err.context.json();
+                            errorMessage = errorBody.message || errorBody.error || errorMessage;
+                        } catch (parseError) {
+                            try {
+                                errorMessage = await err.context.text();
+                            } catch (textError) {
+                                console.error('Failed to parse error response as text:', textError);
+                            }
+                        }
+                    }
+                    console.error('Error invoking bonus calculator:', errorMessage, err);
+                    showNotification(`Bonus Error: ${errorMessage}`, true);
+                    
+                    const statCardsToAnimate = [`${prefix}stat-basepay`, `${prefix}stat-daily-bonus`, `${prefix}stat-weekly-bonus`, `${prefix}stat-monthly-bonus`, `${prefix}stat-total`];
+                    statCardsToAnimate.forEach(id => {
+                        const el = document.getElementById(id);
+                        if(el) el.textContent = 'Error';
+                    });
+                }
+            }
+            
+            async function updateAggregateStatCards(userType) {
+                const prefix = userType === 'admin' ? 'admin-' : '';
+                const startInput = userType === 'admin' ? adminStartDateInput : startDateInput;
+                const endInput = userType === 'admin' ? adminEndDateInput : endDateInput;
+
+                try {
+                    const { data, error } = await supabaseClient.functions.invoke('get-aggregate-stats', {
+                        body: {
+                            startDate: startInput.value,
+                            endDate: endInput.value,
+                        }
+                    });
+
+                    if (error) throw error;
+
+                    const formatCurrency = (num) => `₱${(num || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+                    document.getElementById(`${prefix}stat-branded`).textContent = data.total_branded_sold || 0;
+                    document.getElementById(`${prefix}stat-freesize`).textContent = data.total_freesize_sold || 0;
+                    document.getElementById(`${prefix}stat-basepay`).textContent = formatCurrency(data.total_base_pay);
+                    document.getElementById(`${prefix}stat-daily-bonus`).textContent = formatCurrency(data.total_daily_bonus);
+                    document.getElementById(`${prefix}stat-weekly-bonus`).textContent = formatCurrency(data.total_weekly_bonus);
+                    document.getElementById(`${prefix}stat-monthly-bonus`).textContent = formatCurrency(data.total_monthly_bonus);
+                    document.getElementById(`${prefix}stat-total`).textContent = formatCurrency(data.final_total_payout);
+
+                } catch (err) {
+                    let errorMessage = err.message || 'An unknown error occurred.';
+                    if (err.context && typeof err.context.json === 'function') {
+                        try {
+                            const errorBody = await err.context.json();
+                            errorMessage = errorBody.message || errorBody.error || errorMessage;
+                        } catch (parseError) {
+                            try {
+                                errorMessage = await err.context.text();
+                            } catch (textError) {
+                                console.error('Failed to parse error response as text:', textError);
+                            }
+                        }
+                    }
+                    console.error('Error invoking aggregate stats:', errorMessage, err);
+                    showNotification(`Aggregate Error: ${errorMessage}`, true);
+                }
+            }
+            
+            async function updateStatCards(userType) {
+                const is_admin = userType === 'admin';
+                const prefix = is_admin ? 'admin-' : '';
+                const selectedSellerId = is_admin ? sellerFilter.value : currentUserProfile.id;
+
+                const statCardsToAnimate = [
+                    `${prefix}stat-basepay`, `${prefix}stat-daily-bonus`, `${prefix}stat-weekly-bonus`,
+                    `${prefix}stat-monthly-bonus`, `${prefix}stat-total`
+                ];
+                 statCardsToAnimate.forEach(id => {
+                    const el = document.getElementById(id);
+                    if(el) {
+                        el.parentElement.classList.add('stat-skeleton');
+                        el.classList.add('stat-value');
+                        el.innerHTML = '&nbsp;';
+                    }
+                });
+
+                try {
+                    if (is_admin && selectedSellerId === 'all') {
+                        await updateAggregateStatCards(userType);
+                    } else {
+                        await updateIndividualStatCards(userType);
+                    }
+                } finally {
+                     statCardsToAnimate.forEach(id => {
+                        const el = document.getElementById(id);
+                        if(el) {
+                           el.parentElement.classList.remove('stat-skeleton');
+                           el.classList.remove('stat-value');
+                        }
+                    });
+                }
             }
 
-            async function applyFilter(userType) {
+            async function fetchAndRenderLogs(userType) {
                 const is_admin = userType === 'admin';
                 const startInput = is_admin ? adminStartDateInput : startDateInput;
                 const endInput = is_admin ? adminEndDateInput : endDateInput;
                 const tableBody = is_admin ? adminLogsTableBody : logsTableBody;
-                
-                if (!startInput.value || !endInput.value) return;
+
+                renderSkeletonLogs(tableBody);
 
                 let query = supabaseClient
                     .from('logged_sessions')
-                    // MODIFIED: Select all columns to get the new payout fields
                     .select('*')
                     .gte('start_time', startInput.value)
                     .lte('start_time', `${endInput.value}T23:59:59Z`)
@@ -897,11 +1054,23 @@
 
                 if (error) {
                     showNotification('Failed to load logs.', true);
+                    tableBody.innerHTML = '';
                     return;
                 }
                 
                 await renderLogs(data, tableBody, userType);
-                await updateStatCards(userType);
+            }
+            
+            async function applyFilter(userType) {
+                const startInput = userType === 'admin' ? adminStartDateInput : startDateInput;
+                const endInput = userType === 'admin' ? adminEndDateInput : endDateInput;
+                
+                if (!startInput.value || !endInput.value) return;
+
+                await Promise.all([
+                    fetchAndRenderLogs(userType),
+                    updateStatCards(userType)
+                ]);
             }
 
             function handleDateFilterClick(e, userType) {
@@ -925,11 +1094,10 @@
                 }
                 
                 customFilter.classList.add('hidden');
-                const today = new Date(); // Use real current date
+                const today = new Date(); 
                 let startDate, endDate;
                 
-                // Assuming week starts on Wednesday
-                const dayOfWeek = today.getDay(); // Sunday = 0, Wednesday = 3
+                const dayOfWeek = today.getDay();
                 const diffToWednesday = (dayOfWeek < 3) ? dayOfWeek + 4 : dayOfWeek - 3;
                 
                 const thisWeekStart = new Date(today);
@@ -952,6 +1120,19 @@
                 applyFilter(userType);
             }
 
+            function handleDateInputChange(startInput, endInput, userType) {
+                const startDate = startInput.value;
+                const endDate = endInput.value;
+
+                if (startDate && endDate) {
+                    if (endDate < startDate) {
+                        showNotification('End date cannot be earlier than start date.', true);
+                        endInput.value = startDate;
+                    }
+                    applyFilter(userType);
+                }
+            }
+
             async function openEditLogModal(logId) {
                 const { data: log, error } = await supabaseClient.from('logged_sessions').select('*, seller:seller_id (full_name)').eq('id', logId).single();
                 if (error || !log) {
@@ -968,7 +1149,6 @@
                 document.getElementById('end-time').value = formatDateTimeLocal(log.end_time);
                 document.getElementById('branded-sold').value = log.branded_sold;
                 document.getElementById('free-size-sold').value = log.free_size_sold;
-                // REMOVED: No longer setting base-pay input
                 calculateDuration();
                 logEntryModal.classList.remove('hidden');
             }
@@ -1177,8 +1357,6 @@
                 const logId = document.getElementById('log-id').value;
                 const isAdmin = currentUserProfile.role === 'admin';
                 
-                // MODIFIED: 'payout_base' is removed from the data object.
-                // The backend trigger will calculate it.
                 const logData = {
                     start_time: document.getElementById('start-time').value,
                     end_time: document.getElementById('end-time').value,
@@ -1187,9 +1365,9 @@
                 };
                 
                 let response;
-                if (logId) { // Editing existing log
+                if (logId) {
                     response = await supabaseClient.from('logged_sessions').update(logData).eq('id', logId);
-                } else { // Creating new log
+                } else {
                     logData.seller_id = currentUserProfile.id;
                     logData.created_by = currentUserProfile.id;
                     response = await supabaseClient.from('logged_sessions').insert([logData]);
@@ -1211,12 +1389,13 @@
             // --- Filter Listeners ---
             dateFilterButtons.addEventListener('click', (e) => handleDateFilterClick(e, 'seller'));
             adminDateFilterButtons.addEventListener('click', (e) => handleDateFilterClick(e, 'admin'));
-            [startDateInput, endDateInput, adminStartDateInput, adminEndDateInput, sellerFilter].forEach(el => {
-                el.addEventListener('change', () => {
-                    const userType = el.id.startsWith('admin') ? 'admin' : 'seller';
-                    applyFilter(userType);
-                });
-            });
+            
+            startDateInput.addEventListener('change', () => handleDateInputChange(startDateInput, endDateInput, 'seller'));
+            endDateInput.addEventListener('change', () => handleDateInputChange(startDateInput, endDateInput, 'seller'));
+            adminStartDateInput.addEventListener('change', () => handleDateInputChange(adminStartDateInput, adminEndDateInput, 'admin'));
+            adminEndDateInput.addEventListener('change', () => handleDateInputChange(adminStartDateInput, adminEndDateInput, 'admin'));
+            
+            sellerFilter.addEventListener('change', () => applyFilter('admin'));
             
             // --- Admin Listeners ---
             document.getElementById('admin-logs-table').addEventListener('click', (e) => {
@@ -1270,7 +1449,7 @@
                 } else {
                     showNotification('Bonus configuration saved!');
                     bonusConfigModal.classList.add('hidden');
-                    loadBonusConfigs(); // Reload configs to update tooltips
+                    loadBonusConfigs();
                 }
             });
 
@@ -1294,11 +1473,11 @@
                     status: document.getElementById('user-status').value,
                 };
 
-                if (userId) { // Editing
+                if (userId) {
                     const { error } = await supabaseClient.from('profiles').update(userData).eq('id', userId);
                     if (error) showNotification(error.message, true);
                     else showNotification('User updated successfully.');
-                } else { // Adding (via admin invite)
+                } else {
                     const email = document.getElementById('user-email').value;
                     const { data, error } = await supabaseClient.auth.admin.inviteUserByEmail(email, {
                         data: userData
@@ -1327,7 +1506,6 @@
             profileForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 
-                // Update profile info
                 const profileUpdates = {
                     full_name: document.getElementById('profile-name').value,
                     contact_number: document.getElementById('profile-phone').value,
@@ -1339,7 +1517,6 @@
                     return;
                 }
                 
-                // Update password if provided
                 const newPassword = document.getElementById('profile-new-password').value;
                 const confirmPassword = document.getElementById('profile-confirm-password').value;
                 if (newPassword) {
@@ -1356,7 +1533,6 @@
                 
                 showNotification('Profile saved successfully!');
                 profileModal.classList.add('hidden');
-                // Refetch profile to update local state
                 currentUserProfile = await fetchUserProfile({ id: currentUserProfile.id }); 
                 sellerWelcomeName.textContent = `Hi, ${currentUserProfile.full_name.split(' ')[0]}!`;
             });
