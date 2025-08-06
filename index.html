@@ -8,6 +8,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <!-- Supabase JS Library -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         /* Custom Styles */
         body {
@@ -66,6 +68,19 @@
                 padding: 0.75rem;
             }
         }
+        
+        /* --- Notification Toast --- */
+        #notification-toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(200%);
+            transition: transform 0.5s ease-in-out;
+            z-index: 100;
+        }
+        #notification-toast.show {
+            transform: translateX(-50%) translateY(0);
+        }
     </style>
 </head>
 <body class="bg-gradient-to-br from-pink-200 via-rose-100 to-stone-200 min-h-screen w-full">
@@ -74,18 +89,42 @@
         <!-- Login Screen -->
         <div id="login-screen" class="w-full max-w-md text-center mx-auto mt-[20vh]">
             <div class="glass-card p-8">
-                <h1 class="text-4xl font-bold text-gray-800 mb-2">Welcome</h1>
-                <p class="text-gray-600 mb-8">Please select your role to sign in.</p>
-                <div class="space-y-4">
-                    <button id="login-seller" class="w-full flex items-center justify-center gap-3 bg-pink-500 text-white font-bold py-3 px-4 rounded-xl hover:bg-pink-600 transition-all duration-300 transform hover:scale-105 shadow-md">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                        <span>Login as Seller</span>
+                <h1 class="text-4xl font-bold text-gray-800 mb-2">Poppy Market</h1>
+                <p class="text-gray-600 mb-8">Sign in to continue</p>
+                <form id="login-form" class="space-y-4">
+                    <div>
+                        <label for="email" class="sr-only">Email</label>
+                        <input type="email" id="email" placeholder="Email Address" required class="w-full p-3 rounded-lg border-white/40 bg-white/50 focus:ring-pink-500 focus:border-pink-500 transition-colors" />
+                    </div>
+                    <div>
+                        <label for="password" class="sr-only">Password</label>
+                        <input type="password" id="password" placeholder="Password" required class="w-full p-3 rounded-lg border-white/40 bg-white/50 focus:ring-pink-500 focus:border-pink-500 transition-colors" />
+                    </div>
+                    <button type="submit" class="w-full flex items-center justify-center gap-3 bg-pink-500 text-white font-bold py-3 px-4 rounded-xl hover:bg-pink-600 transition-all duration-300 transform hover:scale-105 shadow-md">
+                        <span>Sign In</span>
                     </button>
-                    <button id="login-admin" class="w-full flex items-center justify-center gap-3 bg-gray-700 text-white font-bold py-3 px-4 rounded-xl hover:bg-gray-800 transition-all duration-300 transform hover:scale-105 shadow-md">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
-                        <span>Login as Admin</span>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Password Reset Screen -->
+        <div id="password-reset-screen" class="hidden w-full max-w-md text-center mx-auto mt-[20vh]">
+            <div class="glass-card p-8">
+                <h1 class="text-4xl font-bold text-gray-800 mb-2">Reset Password</h1>
+                <p class="text-gray-600 mb-8">Enter your new password below.</p>
+                <form id="password-reset-form" class="space-y-4">
+                    <div>
+                        <label for="new-password" class="sr-only">New Password</label>
+                        <input type="password" id="new-password" placeholder="New Password" required class="w-full p-3 rounded-lg border-white/40 bg-white/50 focus:ring-pink-500 focus:border-pink-500 transition-colors" />
+                    </div>
+                     <div>
+                        <label for="confirm-new-password" class="sr-only">Confirm New Password</label>
+                        <input type="password" id="confirm-new-password" placeholder="Confirm New Password" required class="w-full p-3 rounded-lg border-white/40 bg-white/50 focus:ring-pink-500 focus:border-pink-500 transition-colors" />
+                    </div>
+                    <button type="submit" class="w-full flex items-center justify-center gap-3 bg-pink-500 text-white font-bold py-3 px-4 rounded-xl hover:bg-pink-600 transition-all duration-300 transform hover:scale-105 shadow-md">
+                        <span>Save New Password</span>
                     </button>
-                </div>
+                </form>
             </div>
         </div>
 
@@ -94,6 +133,7 @@
             <div class="flex justify-between items-center mb-4">
                 <h1 class="text-3xl font-bold text-gray-800">Dashboard</h1>
                 <div class="flex items-center gap-4">
+                     <p id="seller-welcome-name" class="text-gray-700 font-medium hidden sm:block"></p>
                     <button id="open-profile-modal-btn" class="flex items-center justify-center bg-white/50 text-gray-600 w-10 h-10 rounded-full hover:bg-white/80 transition-all" title="My Profile">
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                     </button>
@@ -140,8 +180,8 @@
                     <div class="relative group flex items-center justify-center gap-1.5">
                         <p class="text-amber-800 text-xs font-medium">Daily Bonus</p>
                         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-amber-600"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                        <div class="absolute bottom-full mb-2 w-48 p-2 text-xs text-left text-white bg-gray-800 rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10">
-                            Bonus based on hitting daily sales targets.
+                        <div id="daily-bonus-tooltip" class="absolute bottom-full mb-2 w-48 p-2 text-xs text-left text-white bg-gray-800 rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10">
+                            Loading...
                             <svg class="absolute text-gray-800 h-2 w-full left-0 top-full" x="0px" y="0px" viewBox="0 0 255 255" xml:space="preserve"><polygon class="fill-current" points="0,0 127.5,127.5 255,0"/></svg>
                         </div>
                     </div>
@@ -151,8 +191,8 @@
                     <div class="relative group flex items-center justify-center gap-1.5">
                         <p class="text-amber-800 text-xs font-medium">Weekly Bonus</p>
                         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-amber-600"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                        <div class="absolute bottom-full mb-2 w-48 p-2 text-xs text-left text-white bg-gray-800 rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10">
-                            Bonus for consistently meeting weekly item quotas.
+                        <div id="weekly-bonus-tooltip" class="absolute bottom-full mb-2 w-48 p-2 text-xs text-left text-white bg-gray-800 rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10">
+                            Loading...
                             <svg class="absolute text-gray-800 h-2 w-full left-0 top-full" x="0px" y="0px" viewBox="0 0 255 255" xml:space="preserve"><polygon class="fill-current" points="0,0 127.5,127.5 255,0"/></svg>
                         </div>
                     </div>
@@ -162,8 +202,8 @@
                      <div class="relative group flex items-center justify-center gap-1.5">
                         <p class="text-amber-800 text-xs font-medium">Monthly Bonus</p>
                         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-amber-600"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                        <div class="absolute bottom-full mb-2 w-48 p-2 text-xs text-left text-white bg-gray-800 rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10">
-                           Top performers of the month receive an additional bonus.
+                        <div id="monthly-bonus-tooltip" class="absolute bottom-full mb-2 w-48 p-2 text-xs text-left text-white bg-gray-800 rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10">
+                           Loading...
                             <svg class="absolute text-gray-800 h-2 w-full left-0 top-full" x="0px" y="0px" viewBox="0 0 255 255" xml:space="preserve"><polygon class="fill-current" points="0,0 127.5,127.5 255,0"/></svg>
                         </div>
                     </div>
@@ -341,9 +381,9 @@
                             <input id="free-size-sold" type="number" placeholder="0" min="0" class="w-full p-2 rounded-lg border-white/40 bg-white/50 focus:ring-pink-500 focus:border-pink-500" />
                         </div>
                     </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-600 mb-1">Image Upload (Optional)</label>
-                        <input id="image-upload" type="file" accept="image/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-pink-100 file:text-pink-700 hover:file:bg-pink-200 transition-colors" />
+                     <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-1">Base Pay (₱)</label>
+                        <input id="base-pay" type="number" placeholder="0.00" min="0" step="0.01" class="w-full p-2 rounded-lg border-white/40 bg-white/50 focus:ring-pink-500 focus:border-pink-500" />
                     </div>
                     <button type="submit" class="w-full bg-pink-500 text-white font-bold py-3 px-4 rounded-xl hover:bg-pink-600 transition-all duration-300 transform hover:scale-105 shadow-md mt-6">
                         Submit Log
@@ -362,6 +402,7 @@
                     </button>
                 </div>
                 <form id="bonus-config-form" class="space-y-4">
+                    <input type="hidden" id="bonus-config-id" />
                     <div>
                         <label for="bonus-type-select" class="block text-sm font-medium text-gray-600 mb-1">Bonus Type</label>
                         <select id="bonus-type-select" class="w-full p-2 rounded-lg border-white/40 bg-white/50 focus:ring-pink-500 focus:border-pink-500">
@@ -407,6 +448,10 @@
                 </div>
                 <form id="user-form" class="space-y-4">
                     <input type="hidden" id="user-id" />
+                     <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-1">Email</label>
+                        <input id="user-email" type="email" class="w-full p-2 rounded-lg border-white/40 bg-white/50 focus:ring-pink-500 focus:border-pink-500" required />
+                    </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-600 mb-1">Full Name</label>
                         <input id="user-name" type="text" class="w-full p-2 rounded-lg border-white/40 bg-white/50 focus:ring-pink-500 focus:border-pink-500" required />
@@ -418,11 +463,19 @@
                             <option value="admin">Admin</option>
                         </select>
                     </div>
+                     <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-1">Status</label>
+                        <select id="user-status" class="w-full p-2 rounded-lg border-white/40 bg-white/50 focus:ring-pink-500 focus:border-pink-500">
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                            <option value="pending">Pending</option>
+                        </select>
+                    </div>
                     <button type="submit" class="w-full bg-pink-500 text-white font-bold py-3 px-4 rounded-xl hover:bg-pink-600 transition-all duration-300 transform hover:scale-105 shadow-md mt-6">
                         Save User
                     </button>
-                    <button type="button" id="reset-password-btn" class="w-full bg-gray-500 text-white font-bold py-3 px-4 rounded-xl hover:bg-gray-600 transition-all">
-                        Reset Password
+                    <button type="button" id="reset-password-btn" class="hidden w-full bg-gray-500 text-white font-bold py-3 px-4 rounded-xl hover:bg-gray-600 transition-all">
+                        Send Password Reset
                     </button>
                 </form>
             </div>
@@ -455,10 +508,6 @@
                         <p class="text-sm font-medium text-gray-800">Change Password</p>
                         <div class="mt-2 space-y-4">
                              <div>
-                                <label class="block text-sm font-medium text-gray-600 mb-1">Current Password</label>
-                                <input id="profile-current-password" type="password" class="w-full p-2 rounded-lg border-white/40 bg-white/50 focus:ring-pink-500 focus:border-pink-500" />
-                            </div>
-                             <div>
                                 <label class="block text-sm font-medium text-gray-600 mb-1">New Password</label>
                                 <input id="profile-new-password" type="password" class="w-full p-2 rounded-lg border-white/40 bg-white/50 focus:ring-pink-500 focus:border-pink-500" />
                             </div>
@@ -476,31 +525,35 @@
             </div>
         </div>
     </main>
+    
+    <!-- Notification Toast -->
+    <div id="notification-toast" class="p-4 rounded-lg shadow-lg text-white">
+        <p id="notification-message"></p>
+    </div>
+
 
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // --- MOCK DATA ---
-            const mockUsers = [
-                { id: 1, name: 'Alice', role: 'seller', status: 'active', phone: '09171234567', gcash: '09171234567' },
-                { id: 2, name: 'Bob', role: 'seller', status: 'active', phone: '09177654321', gcash: '09177654321' },
-                { id: 3, name: 'Charlie', role: 'seller', status: 'inactive', phone: '09178889999', gcash: '09178889999' },
-            ];
-            const mockLogs = [
-                { id: 1, sellerId: 1, startDate: "2025-08-06T09:00", endDate: "2025-08-06T17:00", duration: "8h 0m", brandedSold: 7, freeSizeSold: 11, basePay: 500, dailyBonus: 50, weeklyBonus: 0, monthlyBonus: 0 },
-                { id: 2, sellerId: 2, startDate: "2025-08-06T09:05", endDate: "2025-08-06T17:15", duration: "8h 10m", brandedSold: 9, freeSizeSold: 8, basePay: 500, dailyBonus: 65, weeklyBonus: 0, monthlyBonus: 0 },
-                { id: 3, sellerId: 1, startDate: "2025-08-05T09:03", endDate: "2025-08-05T17:05", duration: "8h 2m", brandedSold: 5, freeSizeSold: 12, basePay: 500, dailyBonus: 25, weeklyBonus: 0, monthlyBonus: 0 },
-                { id: 4, sellerId: 3, startDate: "2025-08-05T09:00", endDate: "2025-08-05T17:00", duration: "8h 0m", brandedSold: 12, freeSizeSold: 15, basePay: 500, dailyBonus: 100, weeklyBonus: 0, monthlyBonus: 0 },
-                { id: 5, sellerId: 2, startDate: "2025-08-04T08:58", endDate: "2025-08-04T17:01", duration: "8h 3m", brandedSold: 8, freeSizeSold: 10, basePay: 500, dailyBonus: 60, weeklyBonus: 200, monthlyBonus: 0 },
-                { id: 6, sellerId: 1, startDate: "2025-07-30T09:10", endDate: "2025-07-30T17:15", duration: "8h 5m", brandedSold: 10, freeSizeSold: 8, basePay: 500, dailyBonus: 70, weeklyBonus: 0, monthlyBonus: 1000 },
-            ];
+        // --- Supabase Client Setup ---
+        const SUPABASE_URL = 'https://lmzxjxumfqjrvcnsrfbr.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxtenhqeHVtZnFqcnZjbnNyZmJyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA1MDUzNDIsImV4cCI6MjA2NjA4MTM0Mn0.7vd1mZzXKYjf64b_lRmPUR0KM_4VdgJMxsDVrCEYbTw';
+        
+        // --- App State ---
+        let supabaseClient;
+        let currentUserProfile = null;
+        let bonusConfigs = {};
 
+        document.addEventListener('DOMContentLoaded', () => {
+            // FIX: Initialize the client *after* the DOM (and the Supabase script) has loaded.
+            supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            
             // --- DOM Elements ---
             const loginScreen = document.getElementById('login-screen');
+            const passwordResetScreen = document.getElementById('password-reset-screen');
             const sellerDashboard = document.getElementById('seller-dashboard');
             const adminDashboard = document.getElementById('admin-dashboard');
             const userManagementPage = document.getElementById('user-management-page');
-            const loginSellerBtn = document.getElementById('login-seller');
-            const loginAdminBtn = document.getElementById('login-admin');
+            const loginForm = document.getElementById('login-form');
+            const passwordResetForm = document.getElementById('password-reset-form');
             const logoutBtns = document.querySelectorAll('.logout-btn');
             
             // Seller UI
@@ -511,6 +564,7 @@
             const endDateInput = document.getElementById('end-date-input');
             const logsTableBody = document.getElementById('previous-logs-table');
             const openProfileModalBtn = document.getElementById('open-profile-modal-btn');
+            const sellerWelcomeName = document.getElementById('seller-welcome-name');
 
             // Admin UI
             const sellerFilter = document.getElementById('seller-filter');
@@ -533,6 +587,8 @@
             const logModalSellerName = document.getElementById('log-modal-seller-name');
             const bonusConfigModal = document.getElementById('bonus-config-modal');
             const closeBonusConfigModalBtn = document.getElementById('close-bonus-config-modal');
+            const bonusConfigForm = document.getElementById('bonus-config-form');
+            const bonusTypeSelect = document.getElementById('bonus-type-select');
             const userModal = document.getElementById('user-modal');
             const userModalTitle = document.getElementById('user-modal-title');
             const closeUserModalBtn = document.getElementById('close-user-modal');
@@ -542,47 +598,85 @@
             const closeProfileModalBtn = document.getElementById('close-profile-modal');
             const profileForm = document.getElementById('profile-form');
 
-            // --- Functions ---
-            function hideAllScreens() {
-                if(loginScreen) loginScreen.classList.add('hidden');
-                if(sellerDashboard) sellerDashboard.classList.add('hidden');
-                if(adminDashboard) adminDashboard.classList.add('hidden');
-                if(userManagementPage) userManagementPage.classList.add('hidden');
-            }
+            // --- Helper Functions ---
+            function showNotification(message, isError = false) {
+                const toast = document.getElementById('notification-toast');
+                const messageEl = document.getElementById('notification-message');
+                if(!toast || !messageEl) return;
 
-            function handleLogin(userType) {
-                hideAllScreens();
-                if (userType === 'seller') {
-                    if(sellerDashboard) sellerDashboard.classList.remove('hidden');
-                    document.querySelector('#date-filter-buttons .filter-btn[data-filter="this-week"]')?.click();
-                } else if (userType === 'admin') {
-                    if(adminDashboard) adminDashboard.classList.remove('hidden');
-                    populateSellerFilter();
-                    document.querySelector('#admin-date-filter-buttons .filter-btn[data-filter="this-week"]')?.click();
-                }
+                messageEl.textContent = message;
+                toast.className = `p-4 rounded-lg shadow-lg text-white ${isError ? 'bg-red-500' : 'bg-green-500'}`;
+                toast.classList.add('show');
+
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                }, 3000);
             }
             
-            function populateSellerFilter() {
-                if(!sellerFilter) return;
+            function hideAllScreens() {
+                loginScreen.classList.add('hidden');
+                passwordResetScreen.classList.add('hidden');
+                sellerDashboard.classList.add('hidden');
+                adminDashboard.classList.add('hidden');
+                userManagementPage.classList.add('hidden');
+            }
+
+            async function handleInitialLoad(session) {
+                if (session && session.user) {
+                    const { data, error } = await supabaseClient
+                        .from('profiles')
+                        .select('*')
+                        .eq('id', session.user.id)
+                        .single();
+
+                    if (error) {
+                        showNotification('Could not fetch user profile.', true);
+                        await supabaseClient.auth.signOut();
+                        return;
+                    }
+
+                    currentUserProfile = data;
+                    hideAllScreens();
+                    await loadBonusConfigs();
+
+                    if (data.role === 'admin') {
+                        adminDashboard.classList.remove('hidden');
+                        await populateSellerFilter();
+                        document.querySelector('#admin-date-filter-buttons .filter-btn[data-filter="this-week"]')?.click();
+                    } else if (data.role === 'seller') {
+                        sellerDashboard.classList.remove('hidden');
+                        sellerWelcomeName.textContent = `Hi, ${data.full_name.split(' ')[0]}!`;
+                        document.querySelector('#date-filter-buttons .filter-btn[data-filter="this-week"]')?.click();
+                    } else {
+                         showNotification('Unknown user role.', true);
+                         await supabaseClient.auth.signOut();
+                    }
+                } else {
+                    hideAllScreens();
+                    loginScreen.classList.remove('hidden');
+                }
+            }
+
+            async function populateSellerFilter() {
+                const { data, error } = await supabaseClient.from('profiles').select('id, full_name').order('full_name');
+                if (error) {
+                    showNotification('Failed to load sellers.', true);
+                    return;
+                }
                 sellerFilter.innerHTML = '<option value="all">All Sellers</option>';
-                mockUsers.filter(u => u.role === 'seller').forEach(seller => {
+                data.forEach(seller => {
                     const option = document.createElement('option');
                     option.value = seller.id;
-                    option.textContent = seller.name;
+                    option.textContent = seller.full_name || seller.email;
                     sellerFilter.appendChild(option);
                 });
             }
 
-            function handleLogout() {
-                hideAllScreens();
-                if(loginScreen) loginScreen.classList.remove('hidden');
-            }
-            
             function calculateDuration() {
                 const startTimeInput = document.getElementById('start-time');
                 const endTimeInput = document.getElementById('end-time');
                 const durationInput = document.getElementById('duration');
-                if (startTimeInput && endTimeInput && durationInput && startTimeInput.value && endTimeInput.value) {
+                if (startTimeInput.value && endTimeInput.value) {
                     const start = new Date(startTimeInput.value);
                     const end = new Date(endTimeInput.value);
                     if (end > start) {
@@ -593,7 +687,7 @@
                     } else {
                         durationInput.value = 'Invalid range';
                     }
-                } else if(durationInput) {
+                } else {
                     durationInput.value = '0h 0m';
                 }
             }
@@ -604,13 +698,22 @@
             
             function formatShortDate(dateString) {
                 const date = new Date(dateString);
-                return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                // Use a timezone that is less likely to shift the date
+                return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+            }
+            
+            function formatDateTimeLocal(dateString) {
+                if (!dateString) return '';
+                const date = new Date(dateString);
+                // Adjust for local timezone offset
+                const timezoneOffset = date.getTimezoneOffset() * 60000;
+                const localDate = new Date(date.getTime() - timezoneOffset);
+                return localDate.toISOString().slice(0, 16);
             }
 
-            function renderLogs(logs, targetTable, userType = 'seller') {
-                if(!targetTable) return;
+            async function renderLogs(logs, targetTable, userType = 'seller') {
                 targetTable.innerHTML = '';
-                if (logs.length === 0) {
+                if (!logs || logs.length === 0) {
                     const row = targetTable.insertRow();
                     const cell = row.insertCell();
                     cell.colSpan = userType === 'admin' ? 4 : 3;
@@ -618,86 +721,127 @@
                     cell.textContent = 'No logs found for this period.';
                     return;
                 }
-                logs.forEach(log => {
+                
+                // Fetch all bonus configs at once to avoid multiple queries in a loop
+                const { data: configs, error } = await supabaseClient.from('bonus_configs').select('*');
+                if (error) {
+                    showNotification('Could not load bonus rules.', true);
+                    return;
+                }
+                const bonusRules = configs.reduce((acc, c) => ({ ...acc, [c.cadence]: c }), {});
+
+                for (const log of logs) {
                     const row = targetTable.insertRow();
-                    const totalBonus = log.dailyBonus + log.weeklyBonus + log.monthlyBonus;
-                    const totalPayout = log.basePay + totalBonus;
+                    
+                    // Simple Daily Bonus Calculation (example)
+                    const dailyRule = bonusRules.daily;
+                    let dailyBonus = 0;
+                    if (dailyRule && 
+                        (log.duration_minutes / 60) >= dailyRule.min_duration_hours &&
+                        log.branded_sold >= dailyRule.min_branded_sold &&
+                        log.free_size_sold >= dailyRule.min_freesize_sold) {
+                        dailyBonus = dailyRule.bonus_amount;
+                    }
+                    // Weekly/Monthly would require more complex aggregation logic outside this loop
+                    const weeklyBonus = 0; // Placeholder
+                    const monthlyBonus = 0; // Placeholder
+
+                    const totalBonus = dailyBonus + weeklyBonus + monthlyBonus;
+                    const totalPayout = (log.payout_base || 0) + totalBonus;
+                    
                     let actionsHtml = '';
                     if (userType === 'admin') {
                         actionsHtml = `<td class="align-top"><button class="edit-log-btn p-1 text-blue-600 hover:text-blue-800" data-log-id="${log.id}"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button></td>`;
                     }
                     row.innerHTML = `
                         <td class="align-top">
-                            <div class="font-bold text-gray-800">${formatShortDate(log.startDate)}</div>
-                            <div class="text-xs text-gray-600">${log.duration}</div>
+                            <div class="font-bold text-gray-800">${formatShortDate(log.start_time)}</div>
+                            <div class="text-xs text-gray-600">${Math.floor(log.duration_minutes / 60)}h ${log.duration_minutes % 60}m</div>
                         </td>
                         <td class="align-top">
-                            <div class="text-sm"><span class="font-medium text-gray-600">Branded:</span> ${log.brandedSold}</div>
-                            <div class="text-sm"><span class="font-medium text-gray-600">Free Size:</span> ${log.freeSizeSold}</div>
+                            <div class="text-sm"><span class="font-medium text-gray-600">Branded:</span> ${log.branded_sold}</div>
+                            <div class="text-sm"><span class="font-medium text-gray-600">Free Size:</span> ${log.free_size_sold}</div>
                         </td>
                         <td class="align-top">
-                            <div class="text-sm text-gray-700">Base: ₱${log.basePay}</div>
+                            <div class="text-sm text-gray-700">Base: ₱${log.payout_base || 0}</div>
                             <div class="text-sm text-gray-700">Bonus: ₱${totalBonus}</div>
                             <div class="font-bold text-gray-900 mt-1">Total: ₱${totalPayout}</div>
                         </td>
                         ${actionsHtml}
                     `;
-                });
+                }
             }
             
-            function updateStatCards(logs, userType = 'seller') {
-                const totals = logs.reduce((acc, log) => {
-                    acc.branded += log.brandedSold;
-                    acc.freeSize += log.freeSizeSold;
-                    acc.basePay += log.basePay;
-                    acc.dailyBonus += log.dailyBonus;
-                    acc.weeklyBonus += log.weeklyBonus;
-                    acc.monthlyBonus += log.monthlyBonus;
-                    return acc;
-                }, { branded: 0, freeSize: 0, basePay: 0, dailyBonus: 0, weeklyBonus: 0, monthlyBonus: 0 });
+            async function updateStatCards(userType) {
+                const is_admin = userType === 'admin';
+                const startInput = is_admin ? adminStartDateInput : startDateInput;
+                const endInput = is_admin ? adminEndDateInput : endDateInput;
+                const selectedSellerId = is_admin ? sellerFilter.value : currentUserProfile.id;
 
-                totals.totalPayout = totals.basePay + totals.dailyBonus + totals.weeklyBonus + totals.monthlyBonus;
+                if (!startInput.value || !endInput.value || !selectedSellerId) return;
                 
-                const prefix = userType === 'admin' ? 'admin-' : '';
+                // For 'All Sellers', we need to aggregate across all, otherwise just one
+                const rpc_params = {
+                    p_start_date: startInput.value,
+                    p_end_date: endInput.value
+                };
+                if (selectedSellerId !== 'all') {
+                    rpc_params.p_seller_id = selectedSellerId;
+                }
 
-                document.getElementById(`${prefix}stat-branded`).textContent = totals.branded;
-                document.getElementById(`${prefix}stat-freesize`).textContent = totals.freeSize;
-                document.getElementById(`${prefix}stat-basepay`).textContent = `₱${totals.basePay.toLocaleString()}`;
-                document.getElementById(`${prefix}stat-daily-bonus`).textContent = `₱${totals.dailyBonus.toLocaleString()}`;
-                document.getElementById(`${prefix}stat-weekly-bonus`).textContent = `₱${totals.weeklyBonus.toLocaleString()}`;
-                document.getElementById(`${prefix}stat-monthly-bonus`).textContent = `₱${totals.monthlyBonus.toLocaleString()}`;
-                document.getElementById(`${prefix}stat-total`).textContent = `₱${totals.totalPayout.toLocaleString()}`;
+                const { data, error } = await supabaseClient.rpc('get_seller_dashboard_stats', rpc_params);
+
+                if (error || !data || data.length === 0) {
+                    showNotification('Could not calculate stats.', true);
+                    console.error('Stat calculation error:', error);
+                    return;
+                }
+
+                const totals = data[0];
+                const prefix = is_admin ? 'admin-' : '';
+
+                document.getElementById(`${prefix}stat-branded`).textContent = totals.total_branded_sold || 0;
+                document.getElementById(`${prefix}stat-freesize`).textContent = totals.total_freesize_sold || 0;
+                document.getElementById(`${prefix}stat-basepay`).textContent = `₱${(totals.total_base_pay || 0).toLocaleString()}`;
+                document.getElementById(`${prefix}stat-daily-bonus`).textContent = `₱${(totals.total_daily_bonus || 0).toLocaleString()}`;
+                document.getElementById(`${prefix}stat-weekly-bonus`).textContent = `₱${(totals.total_weekly_bonus || 0).toLocaleString()}`;
+                document.getElementById(`${prefix}stat-monthly-bonus`).textContent = `₱${(totals.total_monthly_bonus || 0).toLocaleString()}`;
+                document.getElementById(`${prefix}stat-total`).textContent = `₱${(totals.final_total_payout || 0).toLocaleString()}`;
             }
 
-            function applyFilter(userType) {
+            async function applyFilter(userType) {
                 const is_admin = userType === 'admin';
                 const startInput = is_admin ? adminStartDateInput : startDateInput;
                 const endInput = is_admin ? adminEndDateInput : endDateInput;
                 const tableBody = is_admin ? adminLogsTableBody : logsTableBody;
                 
-                if (!startInput || !endInput || !startInput.value || !endInput.value) return;
+                if (!startInput.value || !endInput.value) return;
 
-                const startDate = new Date(startInput.value);
-                const endDate = new Date(endInput.value);
-                endDate.setDate(endDate.getDate() + 1);
-
-                let filteredLogs = mockLogs.filter(log => {
-                    const logDate = new Date(log.startDate);
-                    return logDate >= startDate && logDate < endDate;
-                });
+                let query = supabaseClient
+                    .from('logged_sessions')
+                    .select('*')
+                    .gte('start_time', startInput.value)
+                    .lte('start_time', `${endInput.value}T23:59:59Z`)
+                    .order('start_time', { ascending: false });
                 
                 if (is_admin) {
                     const selectedSellerId = sellerFilter.value;
                     if (selectedSellerId !== 'all') {
-                        filteredLogs = filteredLogs.filter(log => log.sellerId == selectedSellerId);
+                        query = query.eq('seller_id', selectedSellerId);
                     }
                 } else {
-                    // For simplicity, we'll assign seller 1 to the seller dashboard view
-                    filteredLogs = filteredLogs.filter(log => log.sellerId === 1);
+                    query = query.eq('seller_id', currentUserProfile.id);
                 }
 
-                renderLogs(filteredLogs, tableBody, userType);
-                updateStatCards(filteredLogs, userType);
+                const { data, error } = await query;
+
+                if (error) {
+                    showNotification('Failed to load logs.', true);
+                    return;
+                }
+                
+                await renderLogs(data, tableBody, userType);
+                await updateStatCards(userType);
             }
 
             function handleDateFilterClick(e, userType) {
@@ -710,8 +854,6 @@
                 const startInput = is_admin ? adminStartDateInput : startDateInput;
                 const endInput = is_admin ? adminEndDateInput : endDateInput;
 
-                if(!filterButtons || !customFilter || !startInput || !endInput) return;
-
                 filterButtons.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
                 clickedButton.classList.add('active');
 
@@ -723,10 +865,14 @@
                 }
                 
                 customFilter.classList.add('hidden');
-                const today = new Date("2025-08-06T12:00:00");
+                // Use a fixed date for consistent demo results, otherwise use new Date()
+                const today = new Date("2025-08-06T12:00:00"); 
                 let startDate, endDate;
+                
+                // Assuming Wednesday is the start of the week (day 3)
                 const dayOfWeek = today.getDay(); 
                 const diffToWednesday = (dayOfWeek < 3) ? dayOfWeek + 4 : dayOfWeek - 3;
+                
                 const thisWeekStart = new Date(today);
                 thisWeekStart.setDate(today.getDate() - diffToWednesday);
                 thisWeekStart.setHours(0, 0, 0, 0);
@@ -734,181 +880,396 @@
                 if (filterType === 'this-week') {
                     startDate = new Date(thisWeekStart);
                     endDate = new Date(startDate);
-                    endDate.setDate(startDate.getDate() + 7);
+                    endDate.setDate(startDate.getDate() + 6);
                 } else if (filterType === 'last-week') {
                     startDate = new Date(thisWeekStart);
                     startDate.setDate(thisWeekStart.getDate() - 7);
                     endDate = new Date(startDate);
-                    endDate.setDate(startDate.getDate() + 7);
+                    endDate.setDate(startDate.getDate() + 6);
                 }
                 
                 startInput.value = formatDate(startDate);
-                endInput.value = formatDate(new Date(endDate.getTime() - 1));
+                endInput.value = formatDate(endDate);
                 applyFilter(userType);
             }
 
-            function openEditLogModal(logId) {
-                const log = mockLogs.find(l => l.id == logId);
-                if (!log) return;
-                const seller = mockUsers.find(s => s.id === log.sellerId);
+            async function openEditLogModal(logId) {
+                const { data: log, error } = await supabaseClient.from('logged_sessions').select('*, seller:seller_id (full_name)').eq('id', logId).single();
+                if (error || !log) {
+                    showNotification('Could not find log entry.', true);
+                    return;
+                }
 
                 logModalTitle.textContent = 'Edit Log';
-                logModalSellerName.textContent = `Seller: ${seller ? seller.name : 'Unknown'}`;
+                logModalSellerName.textContent = `Seller: ${log.seller.full_name || 'Unknown'}`;
                 logModalSellerName.classList.remove('hidden');
 
                 document.getElementById('log-id').value = log.id;
-                document.getElementById('start-time').value = log.startDate;
-                document.getElementById('end-time').value = log.endDate;
-                document.getElementById('branded-sold').value = log.brandedSold;
-                document.getElementById('free-size-sold').value = log.freeSizeSold;
+                document.getElementById('start-time').value = formatDateTimeLocal(log.start_time);
+                document.getElementById('end-time').value = formatDateTimeLocal(log.end_time);
+                document.getElementById('branded-sold').value = log.branded_sold;
+                document.getElementById('free-size-sold').value = log.free_size_sold;
+                document.getElementById('base-pay').value = log.payout_base;
                 calculateDuration();
                 logEntryModal.classList.remove('hidden');
             }
             
-            function renderUsers() {
-                if(!userListTable) return;
+            async function renderUsers() {
+                const { data: users, error } = await supabaseClient.from('profiles').select('*').order('full_name');
+                if (error) {
+                    showNotification('Could not load users.', true);
+                    return;
+                }
+                
                 userListTable.innerHTML = '';
-                mockUsers.forEach(user => {
+                users.forEach(user => {
                     const row = userListTable.insertRow();
                     const statusClass = user.status === 'active' ? 'text-green-700' : 'text-red-700';
                     row.innerHTML = `
                         <td class="align-top">
-                            <div class="font-bold text-gray-800">${user.name}</div>
+                            <div class="font-bold text-gray-800">${user.full_name || 'N/A'}</div>
+                            <div class="text-xs text-gray-500">${user.email}</div>
                         </td>
                         <td class="align-top text-sm capitalize text-gray-600">${user.role}</td>
                         <td class="align-top text-sm capitalize font-medium ${statusClass}">${user.status}</td>
                         <td class="align-top">
                             <div class="flex items-center gap-2">
                                 <button class="edit-user-btn p-1 text-blue-600 hover:text-blue-800" data-user-id="${user.id}"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
-                                <button class="deactivate-user-btn p-1 text-red-600 hover:text-red-800" data-user-id="${user.id}"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg></button>
                             </div>
                         </td>
                     `;
                 });
             }
             
-            function openUserModal(userId = null) {
-                if(!userForm || !userModal) return;
+            async function openUserModal(userId = null) {
                 userForm.reset();
+                document.getElementById('user-email').disabled = false;
+                resetPasswordBtn.classList.add('hidden');
+                
                 if (userId) {
-                    const user = mockUsers.find(u => u.id === userId);
-                    if (user) {
-                        userModalTitle.textContent = 'Edit User';
-                        document.getElementById('user-id').value = user.id;
-                        document.getElementById('user-name').value = user.name;
-                        document.getElementById('user-role').value = user.role;
-                        resetPasswordBtn.classList.remove('hidden');
+                    const { data: user, error } = await supabaseClient.from('profiles').select('*').eq('id', userId).single();
+                    if (error || !user) {
+                        showNotification('Could not find user.', true);
+                        return;
                     }
+                    userModalTitle.textContent = 'Edit User';
+                    document.getElementById('user-id').value = user.id;
+                    document.getElementById('user-email').value = user.email;
+                    document.getElementById('user-email').disabled = true; // Can't change email
+                    document.getElementById('user-name').value = user.full_name;
+                    document.getElementById('user-role').value = user.role;
+                    document.getElementById('user-status').value = user.status;
+                    resetPasswordBtn.classList.remove('hidden');
                 } else {
                     userModalTitle.textContent = 'Add New User';
-                    resetPasswordBtn.classList.add('hidden');
                 }
                 userModal.classList.remove('hidden');
             }
             
-            function openProfileModal() {
-                if(!profileModal) return;
-                // Assuming current user is Alice (id: 1) for demo
-                const currentUser = mockUsers.find(u => u.id === 1);
-                if (currentUser) {
-                    document.getElementById('profile-name').value = currentUser.name;
-                    document.getElementById('profile-phone').value = currentUser.phone;
-                    document.getElementById('profile-gcash').value = currentUser.gcash;
-                }
+            async function openProfileModal() {
+                if (!currentUserProfile) return;
+                document.getElementById('profile-name').value = currentUserProfile.full_name;
+                document.getElementById('profile-phone').value = currentUserProfile.contact_number;
+                document.getElementById('profile-gcash').value = currentUserProfile.gcash_number;
                 profileModal.classList.remove('hidden');
             }
 
+            async function loadBonusConfigs() {
+                const { data, error } = await supabaseClient.from('bonus_configs').select('*');
+                if (error) {
+                    showNotification('Could not load bonus settings.', true);
+                    return;
+                }
+                bonusConfigs = data.reduce((acc, config) => {
+                    acc[config.cadence] = config;
+                    return acc;
+                }, {});
+
+                // Populate tooltips
+                Object.keys(bonusConfigs).forEach(cadence => {
+                    const config = bonusConfigs[cadence];
+                    const tooltip = document.getElementById(`${cadence}-bonus-tooltip`);
+                    if(tooltip) {
+                        tooltip.innerHTML = `
+                            Requires ${config.min_duration_hours}h, ${config.min_branded_sold} branded, and ${config.min_freesize_sold} free size items.
+                            <svg class="absolute text-gray-800 h-2 w-full left-0 top-full" x="0px" y="0px" viewBox="0 0 255 255" xml:space="preserve"><polygon class="fill-current" points="0,0 127.5,127.5 255,0"/></svg>
+                        `;
+                    }
+                });
+            }
+
+            async function populateBonusConfigForm(cadence) {
+                const config = bonusConfigs[cadence];
+                if (config) {
+                    document.getElementById('bonus-config-id').value = config.id;
+                    document.getElementById('target-duration').value = config.min_duration_hours;
+                    document.getElementById('target-branded').value = config.min_branded_sold;
+                    document.getElementById('target-freesize').value = config.min_freesize_sold;
+                    document.getElementById('bonus-amount').value = config.bonus_amount;
+                } else {
+                    bonusConfigForm.reset();
+                    document.getElementById('bonus-config-id').value = '';
+                }
+            }
+
             // --- Event Listeners ---
-            if(loginSellerBtn) loginSellerBtn.addEventListener('click', () => handleLogin('seller'));
-            if(loginAdminBtn) loginAdminBtn.addEventListener('click', () => handleLogin('admin'));
-            logoutBtns.forEach(btn => {
-                if(btn) btn.addEventListener('click', handleLogout);
+            supabaseClient.auth.onAuthStateChange(async (event, session) => {
+                if (event === 'PASSWORD_RECOVERY') {
+                    hideAllScreens();
+                    passwordResetScreen.classList.remove('hidden');
+                } else if (event === 'SIGNED_IN') {
+                    await handleInitialLoad(session);
+                } else if (event === 'SIGNED_OUT') {
+                    hideAllScreens();
+                    loginScreen.classList.remove('hidden');
+                }
+            });
+            
+            // Initial check in case the page loads with a session already active
+            supabaseClient.auth.getSession().then(({ data: { session } }) => {
+                if(!window.location.hash.includes('type=recovery')) {
+                   handleInitialLoad(session);
+                }
             });
 
+            loginForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+                const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+                if (error) showNotification(error.message, true);
+                loginForm.reset();
+            });
+
+            passwordResetForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const newPassword = document.getElementById('new-password').value;
+                const confirmPassword = document.getElementById('confirm-new-password').value;
+
+                if (newPassword !== confirmPassword) {
+                    showNotification('Passwords do not match.', true);
+                    return;
+                }
+                
+                const { error } = await supabaseClient.auth.updateUser({ password: newPassword });
+
+                if (error) {
+                    showNotification(`Error updating password: ${error.message}`, true);
+                } else {
+                    showNotification('Password updated successfully! Please sign in.');
+                    // Clear the hash from the URL
+                    window.location.hash = '';
+                    hideAllScreens();
+                    loginScreen.classList.remove('hidden');
+                }
+            });
+
+            logoutBtns.forEach(btn => btn.addEventListener('click', async () => {
+                await supabaseClient.auth.signOut();
+                currentUserProfile = null;
+            }));
+
             // Seller Listeners
-            if(dateFilterButtons) dateFilterButtons.addEventListener('click', (e) => handleDateFilterClick(e, 'seller'));
-            if(startDateInput) startDateInput.addEventListener('change', () => applyFilter('seller'));
-            if(endDateInput) endDateInput.addEventListener('change', () => applyFilter('seller'));
-            if(openLogEntryModalBtn) openLogEntryModalBtn.addEventListener('click', () => {
+            dateFilterButtons.addEventListener('click', (e) => handleDateFilterClick(e, 'seller'));
+            startDateInput.addEventListener('change', () => applyFilter('seller'));
+            endDateInput.addEventListener('change', () => applyFilter('seller'));
+            openLogEntryModalBtn.addEventListener('click', () => {
                 logModalTitle.textContent = 'Log Entry';
                 logModalSellerName.classList.add('hidden');
                 logEntryForm.reset();
-                if(document.getElementById('duration')) document.getElementById('duration').value = '0h 0m';
+                document.getElementById('log-id').value = '';
+                document.getElementById('duration').value = '0h 0m';
                 logEntryModal.classList.remove('hidden');
             });
-            if(openProfileModalBtn) openProfileModalBtn.addEventListener('click', openProfileModal);
+            openProfileModalBtn.addEventListener('click', openProfileModal);
             
             // Admin Listeners
-            if(adminDateFilterButtons) adminDateFilterButtons.addEventListener('click', (e) => handleDateFilterClick(e, 'admin'));
-            if(adminStartDateInput) adminStartDateInput.addEventListener('change', () => applyFilter('admin'));
-            if(adminEndDateInput) adminEndDateInput.addEventListener('change', () => applyFilter('admin'));
-            if(sellerFilter) sellerFilter.addEventListener('change', () => applyFilter('admin'));
-            if(adminLogsTableBody) adminLogsTableBody.addEventListener('click', (e) => {
+            adminDateFilterButtons.addEventListener('click', (e) => handleDateFilterClick(e, 'admin'));
+            adminStartDateInput.addEventListener('change', () => applyFilter('admin'));
+            adminEndDateInput.addEventListener('change', () => applyFilter('admin'));
+            sellerFilter.addEventListener('change', () => applyFilter('admin'));
+            adminLogsTableBody.addEventListener('click', (e) => {
                 const editBtn = e.target.closest('.edit-log-btn');
-                if (editBtn) {
-                    openEditLogModal(editBtn.dataset.logId);
-                }
+                if (editBtn) openEditLogModal(editBtn.dataset.logId);
             });
-            if(openUserManagementBtn) openUserManagementBtn.addEventListener('click', () => {
+            openUserManagementBtn.addEventListener('click', async () => {
                 adminDashboard.classList.add('hidden');
                 userManagementPage.classList.remove('hidden');
-                renderUsers();
+                await renderUsers();
             });
-            if(backToAdminDashBtn) backToAdminDashBtn.addEventListener('click', () => {
+            backToAdminDashBtn.addEventListener('click', () => {
                 userManagementPage.classList.add('hidden');
                 adminDashboard.classList.remove('hidden');
             });
-            if(addNewUserBtn) addNewUserBtn.addEventListener('click', () => openUserModal());
-            if(userListTable) userListTable.addEventListener('click', (e) => {
+            addNewUserBtn.addEventListener('click', () => openUserModal());
+            userListTable.addEventListener('click', (e) => {
                 const editBtn = e.target.closest('.edit-user-btn');
-                if (editBtn) {
-                    openUserModal(parseInt(editBtn.dataset.userId));
-                }
-                // Add logic for deactivate button if needed
+                if (editBtn) openUserModal(editBtn.dataset.userId);
             });
 
             // Modal Listeners
-            if(closeLogEntryModalBtn) closeLogEntryModalBtn.addEventListener('click', () => logEntryModal.classList.add('hidden'));
-            if(logEntryModal) logEntryModal.addEventListener('click', (e) => {
-                if (e.target === logEntryModal) logEntryModal.classList.add('hidden');
-            });
-            if(logEntryForm) logEntryForm.addEventListener('submit', (e) => {
+            document.getElementById('start-time').addEventListener('change', calculateDuration);
+            document.getElementById('end-time').addEventListener('change', calculateDuration);
+
+            closeLogEntryModalBtn.addEventListener('click', () => logEntryModal.classList.add('hidden'));
+            logEntryModal.addEventListener('click', (e) => { if (e.target === logEntryModal) logEntryModal.classList.add('hidden'); });
+            
+            logEntryForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
-                console.log('Submitting Log Data...');
-                logEntryForm.reset();
-                logEntryModal.classList.add('hidden');
-            });
-            if(openBonusConfigModalBtn) openBonusConfigModalBtn.addEventListener('click', () => bonusConfigModal.classList.remove('hidden'));
-            if(closeBonusConfigModalBtn) closeBonusConfigModalBtn.addEventListener('click', () => bonusConfigModal.classList.add('hidden'));
-            if(bonusConfigModal) bonusConfigModal.addEventListener('click', (e) => {
-                if (e.target === bonusConfigModal) bonusConfigModal.classList.add('hidden');
-            });
-            if(closeUserModalBtn) closeUserModalBtn.addEventListener('click', () => userModal.classList.add('hidden'));
-            if(userModal) userModal.addEventListener('click', (e) => {
-                if(e.target === userModal) userModal.classList.add('hidden');
-            });
-            if(userForm) userForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                console.log('Saving user data...');
-                userForm.reset();
-                userModal.classList.add('hidden');
-            });
-            if(resetPasswordBtn) resetPasswordBtn.addEventListener('click', () => {
-                const userId = document.getElementById('user-id').value;
-                console.log(`Password for user ID ${userId} has been reset to "Password".`);
-                userModal.classList.add('hidden');
-            });
-            if(closeProfileModalBtn) closeProfileModalBtn.addEventListener('click', () => profileModal.classList.add('hidden'));
-            if(profileModal) profileModal.addEventListener('click', (e) => {
-                if(e.target === profileModal) profileModal.classList.add('hidden');
-            });
-            if(profileForm) profileForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                console.log('Saving profile data...');
-                profileForm.reset();
-                profileModal.classList.add('hidden');
+                const logId = document.getElementById('log-id').value;
+                const { data: { session } } = await supabaseClient.auth.getSession();
+                const userId = session.user.id;
+
+                const logData = {
+                    start_time: document.getElementById('start-time').value,
+                    end_time: document.getElementById('end-time').value,
+                    branded_sold: parseInt(document.getElementById('branded-sold').value) || 0,
+                    free_size_sold: parseInt(document.getElementById('free-size-sold').value) || 0,
+                    payout_base: parseFloat(document.getElementById('base-pay').value) || 0,
+                    created_by: userId,
+                    seller_id: currentUserProfile.role === 'admin' ? sellerFilter.value : userId
+                };
+                
+                let result;
+                if (logId) {
+                    result = await supabaseClient.from('logged_sessions').update(logData).eq('id', logId);
+                } else {
+                    result = await supabaseClient.from('logged_sessions').insert(logData);
+                }
+
+                if (result.error) {
+                    showNotification(result.error.message, true);
+                } else {
+                    showNotification('Log saved successfully!');
+                    logEntryModal.classList.add('hidden');
+                    applyFilter(currentUserProfile.role);
+                }
             });
 
+            openBonusConfigModalBtn.addEventListener('click', async () => {
+                await populateBonusConfigForm(bonusTypeSelect.value);
+                bonusConfigModal.classList.remove('hidden');
+            });
+            bonusTypeSelect.addEventListener('change', (e) => populateBonusConfigForm(e.target.value));
+            closeBonusConfigModalBtn.addEventListener('click', () => bonusConfigModal.classList.add('hidden'));
+            bonusConfigModal.addEventListener('click', (e) => { if (e.target === bonusConfigModal) bonusConfigModal.classList.add('hidden'); });
+            
+            bonusConfigForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const configData = {
+                    cadence: bonusTypeSelect.value,
+                    min_duration_hours: parseInt(document.getElementById('target-duration').value),
+                    min_branded_sold: parseInt(document.getElementById('target-branded').value),
+                    min_freesize_sold: parseInt(document.getElementById('target-freesize').value),
+                    bonus_amount: parseFloat(document.getElementById('bonus-amount').value),
+                    updated_by: currentUserProfile.id
+                };
+
+                const { error } = await supabaseClient
+                    .from('bonus_configs')
+                    .upsert(configData, { onConflict: 'cadence' });
+
+                if (error) {
+                    showNotification(error.message, true);
+                } else {
+                    showNotification('Bonus configuration saved!');
+                    bonusConfigModal.classList.add('hidden');
+                    await loadBonusConfigs(); // Refresh local cache
+                }
+            });
+            
+            closeUserModalBtn.addEventListener('click', () => userModal.classList.add('hidden'));
+            userModal.addEventListener('click', (e) => { if(e.target === userModal) userModal.classList.add('hidden'); });
+            
+            userForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const userId = document.getElementById('user-id').value;
+                const email = document.getElementById('user-email').value;
+                const profileData = {
+                    full_name: document.getElementById('user-name').value,
+                    role: document.getElementById('user-role').value,
+                    status: document.getElementById('user-status').value,
+                    email: email
+                };
+
+                if (userId) { // Editing existing user
+                    const { error } = await supabaseClient.from('profiles').update(profileData).eq('id', userId);
+                    if (error) showNotification(error.message, true);
+                    else showNotification('User updated successfully!');
+                } else { // Adding new user
+                    const { data, error } = await supabaseClient.auth.admin.createUser({
+                        email: email,
+                        email_confirm: true, // User will get an invite
+                        user_metadata: { full_name: profileData.full_name }
+                    });
+                    if (error) {
+                        showNotification(error.message, true);
+                    } else {
+                        // Now insert into profiles table
+                        profileData.id = data.user.id;
+                        const { error: profileError } = await supabaseClient.from('profiles').insert(profileData);
+                         if (profileError) showNotification(profileError.message, true);
+                         else showNotification('User invited successfully!');
+                    }
+                }
+                userModal.classList.add('hidden');
+                await renderUsers();
+            });
+
+            resetPasswordBtn.addEventListener('click', async () => {
+                const email = document.getElementById('user-email').value;
+                const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+                    redirectTo: window.location.origin,
+                });
+                if (error) {
+                    showNotification(error.message, true);
+                } else {
+                    showNotification('Password reset email sent.');
+                }
+                userModal.classList.add('hidden');
+            });
+            
+            closeProfileModalBtn.addEventListener('click', () => profileModal.classList.add('hidden'));
+            profileModal.addEventListener('click', (e) => { if(e.target === profileModal) profileModal.classList.add('hidden'); });
+            
+            profileForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const newPassword = document.getElementById('profile-new-password').value;
+                const confirmPassword = document.getElementById('profile-confirm-password').value;
+
+                // Update user auth (password)
+                if (newPassword) {
+                    if (newPassword !== confirmPassword) {
+                        showNotification('Passwords do not match.', true);
+                        return;
+                    }
+                    const { error: authError } = await supabaseClient.auth.updateUser({ password: newPassword });
+                    if (authError) {
+                        showNotification(authError.message, true);
+                        return;
+                    }
+                }
+
+                // Update user profile data
+                const profileData = {
+                    full_name: document.getElementById('profile-name').value,
+                    contact_number: document.getElementById('profile-phone').value,
+                    gcash_number: document.getElementById('profile-gcash').value,
+                };
+
+                const { error: profileError } = await supabaseClient.from('profiles').update(profileData).eq('id', currentUserProfile.id);
+                
+                if (profileError) {
+                    showNotification(profileError.message, true);
+
+                } else {
+                    showNotification('Profile saved successfully!');
+                    profileModal.classList.add('hidden');
+                    // Refresh current user data
+                    const { data } = await supabaseClient.from('profiles').select('*').eq('id', currentUserProfile.id).single();
+                    currentUserProfile = data;
+                }
+            });
         });
     </script>
 </body>
