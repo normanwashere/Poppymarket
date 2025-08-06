@@ -423,10 +423,7 @@
                             <input id="free-size-sold" type="number" placeholder="0" min="0" class="w-full p-2 rounded-lg border-white/40 bg-white/50 focus:ring-pink-500 focus:border-pink-500" />
                         </div>
                     </div>
-                     <div>
-                        <label class="block text-sm font-medium text-gray-600 mb-1">Base Pay (₱)</label>
-                        <input id="base-pay" type="number" placeholder="0.00" min="0" step="0.01" class="w-full p-2 rounded-lg border-white/40 bg-white/50 focus:ring-pink-500 focus:border-pink-500" />
-                    </div>
+                    <!-- REMOVED: Base Pay input is no longer needed from the client -->
                     <button type="submit" class="w-full bg-pink-500 text-white font-bold py-3 px-4 rounded-xl hover:bg-pink-600 transition-all duration-300 transform hover:scale-105 shadow-md mt-6">
                         Submit Log
                     </button>
@@ -794,34 +791,19 @@
                     return;
                 }
                 
-                const { data: configs, error } = await supabaseClient.from('bonus_configs').select('*');
-                if (error) {
-                    showNotification('Could not load bonus rules.', true);
-                    return;
-                }
-                const bonusRules = configs.reduce((acc, c) => ({ ...acc, [c.cadence]: c }), {});
-
                 for (const log of logs) {
                     const row = targetTable.insertRow();
                     
-                    const dailyRule = bonusRules.daily;
-                    let dailyBonus = 0;
-                    if (dailyRule && 
-                        (log.duration_minutes / 60) >= dailyRule.min_duration_hours &&
-                        log.branded_sold >= dailyRule.min_branded_sold &&
-                        log.free_size_sold >= dailyRule.min_freesize_sold) {
-                        dailyBonus = dailyRule.bonus_amount;
-                    }
-                    const weeklyBonus = 0;
-                    const monthlyBonus = 0;
-
-                    const totalBonus = dailyBonus + weeklyBonus + monthlyBonus;
+                    // MODIFIED: Calculations are now done on the backend. We just display the results.
+                    const totalBonus = (log.payout_daily_bonus || 0) + (log.payout_weekly_bonus || 0) + (log.payout_monthly_bonus || 0);
                     const totalPayout = (log.payout_base || 0) + totalBonus;
                     
                     let actionsHtml = '';
                     if (userType === 'admin') {
                         actionsHtml = `<td class="align-top"><button class="edit-log-btn p-1 text-blue-600 hover:text-blue-800" data-log-id="${log.id}"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button></td>`;
                     }
+                    
+                    // MODIFIED: Display the backend-calculated values
                     row.innerHTML = `
                         <td class="align-top">
                             <div class="font-bold text-gray-800">${formatShortDate(log.start_time)}</div>
@@ -832,9 +814,9 @@
                             <div class="text-sm"><span class="font-medium text-gray-600">Free Size:</span> ${log.free_size_sold}</div>
                         </td>
                         <td class="align-top">
-                            <div class="text-sm text-gray-700">Base: ₱${log.payout_base || 0}</div>
-                            <div class="text-sm text-gray-700">Bonus: ₱${totalBonus}</div>
-                            <div class="font-bold text-gray-900 mt-1">Total: ₱${totalPayout}</div>
+                            <div class="text-sm text-gray-700">Base: ₱${(log.payout_base || 0).toFixed(2)}</div>
+                            <div class="text-sm text-amber-700">Bonus: ₱${totalBonus.toFixed(2)}</div>
+                            <div class="font-bold text-gray-900 mt-1">Total: ₱${totalPayout.toFixed(2)}</div>
                         </td>
                         ${actionsHtml}
                     `;
@@ -849,19 +831,28 @@
 
                 if (!startInput.value || !endInput.value || !selectedSellerId) return;
                 
+                // MODIFIED: This RPC function is assumed to exist on the backend and perform the aggregation.
+                // It sums up the pre-calculated columns from `logged_sessions`.
                 const rpc_params = {
                     p_start_date: startInput.value,
-                    p_end_date: endInput.value
+                    p_end_date: endInput.value,
+                    p_seller_id: selectedSellerId === 'all' ? null : selectedSellerId
                 };
-                if (selectedSellerId !== 'all') {
-                    rpc_params.p_seller_id = selectedSellerId;
-                }
 
                 const { data, error } = await supabaseClient.rpc('get_seller_dashboard_stats', rpc_params);
 
                 if (error || !data || data.length === 0) {
                     showNotification('Could not calculate stats.', true);
                     console.error('Stat calculation error:', error);
+                    // Reset stats to 0 on error
+                    const prefix = is_admin ? 'admin-' : '';
+                    document.getElementById(`${prefix}stat-branded`).textContent = '0';
+                    document.getElementById(`${prefix}stat-freesize`).textContent = '0';
+                    document.getElementById(`${prefix}stat-basepay`).textContent = '₱0';
+                    document.getElementById(`${prefix}stat-daily-bonus`).textContent = '₱0';
+                    document.getElementById(`${prefix}stat-weekly-bonus`).textContent = '₱0';
+                    document.getElementById(`${prefix}stat-monthly-bonus`).textContent = '₱0';
+                    document.getElementById(`${prefix}stat-total`).textContent = '₱0';
                     return;
                 }
 
@@ -870,11 +861,11 @@
 
                 document.getElementById(`${prefix}stat-branded`).textContent = totals.total_branded_sold || 0;
                 document.getElementById(`${prefix}stat-freesize`).textContent = totals.total_freesize_sold || 0;
-                document.getElementById(`${prefix}stat-basepay`).textContent = `₱${(totals.total_base_pay || 0).toLocaleString()}`;
-                document.getElementById(`${prefix}stat-daily-bonus`).textContent = `₱${(totals.total_daily_bonus || 0).toLocaleString()}`;
-                document.getElementById(`${prefix}stat-weekly-bonus`).textContent = `₱${(totals.total_weekly_bonus || 0).toLocaleString()}`;
-                document.getElementById(`${prefix}stat-monthly-bonus`).textContent = `₱${(totals.total_monthly_bonus || 0).toLocaleString()}`;
-                document.getElementById(`${prefix}stat-total`).textContent = `₱${(totals.final_total_payout || 0).toLocaleString()}`;
+                document.getElementById(`${prefix}stat-basepay`).textContent = `₱${(totals.total_base_pay || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+                document.getElementById(`${prefix}stat-daily-bonus`).textContent = `₱${(totals.total_daily_bonus || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+                document.getElementById(`${prefix}stat-weekly-bonus`).textContent = `₱${(totals.total_weekly_bonus || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+                document.getElementById(`${prefix}stat-monthly-bonus`).textContent = `₱${(totals.total_monthly_bonus || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+                document.getElementById(`${prefix}stat-total`).textContent = `₱${(totals.final_total_payout || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
             }
 
             async function applyFilter(userType) {
@@ -887,6 +878,7 @@
 
                 let query = supabaseClient
                     .from('logged_sessions')
+                    // MODIFIED: Select all columns to get the new payout fields
                     .select('*')
                     .gte('start_time', startInput.value)
                     .lte('start_time', `${endInput.value}T23:59:59Z`)
@@ -933,10 +925,11 @@
                 }
                 
                 customFilter.classList.add('hidden');
-                const today = new Date("2025-08-06T12:00:00"); 
+                const today = new Date(); // Use real current date
                 let startDate, endDate;
                 
-                const dayOfWeek = today.getDay(); 
+                // Assuming week starts on Wednesday
+                const dayOfWeek = today.getDay(); // Sunday = 0, Wednesday = 3
                 const diffToWednesday = (dayOfWeek < 3) ? dayOfWeek + 4 : dayOfWeek - 3;
                 
                 const thisWeekStart = new Date(today);
@@ -975,7 +968,7 @@
                 document.getElementById('end-time').value = formatDateTimeLocal(log.end_time);
                 document.getElementById('branded-sold').value = log.branded_sold;
                 document.getElementById('free-size-sold').value = log.free_size_sold;
-                document.getElementById('base-pay').value = log.payout_base;
+                // REMOVED: No longer setting base-pay input
                 calculateDuration();
                 logEntryModal.classList.remove('hidden');
             }
@@ -1097,16 +1090,15 @@
                 const password = document.getElementById('password').value;
                 const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
                 if (error) showNotification(error.message, true);
-                loginForm.reset();
             });
 
             registerForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
-                const fullName = document.getElementById('register-full-name').value;
                 const email = document.getElementById('register-email').value;
                 const password = document.getElementById('register-password').value;
-
-                const { error } = await supabaseClient.auth.signUp({
+                const fullName = document.getElementById('register-full-name').value;
+                
+                const { data, error } = await supabaseClient.auth.signUp({
                     email,
                     password,
                     options: {
@@ -1119,30 +1111,26 @@
                 if (error) {
                     showNotification(error.message, true);
                 } else {
-                    showNotification('Success! Please check your email to verify your account.');
+                    showNotification('Registration successful! Please check your email to verify your account.');
                     registerForm.reset();
                     hideAllScreens();
                     loginScreen.classList.remove('hidden');
                 }
             });
-
+            
             passwordResetForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const newPassword = document.getElementById('new-password').value;
                 const confirmPassword = document.getElementById('confirm-new-password').value;
-
-                if (newPassword !== confirmPassword) {
-                    showNotification('Passwords do not match.', true);
+                if(newPassword !== confirmPassword) {
+                    showNotification("Passwords do not match.", true);
                     return;
                 }
-                
                 const { error } = await supabaseClient.auth.updateUser({ password: newPassword });
-
                 if (error) {
-                    showNotification(`Error updating password: ${error.message}`, true);
+                    showNotification(error.message, true);
                 } else {
-                    showNotification('Password updated successfully! Please sign in.');
-                    window.location.hash = '';
+                    showNotification('Password updated successfully!');
                     hideAllScreens();
                     loginScreen.classList.remove('hidden');
                 }
@@ -1163,209 +1151,216 @@
                 hideAllScreens();
                 loginScreen.classList.remove('hidden');
             });
-
+            
             goToLoginBtn.addEventListener('click', (e) => {
                 e.preventDefault();
-                window.location.hash = '';
+                window.location.hash = ''; // Clear the hash
                 hideAllScreens();
                 loginScreen.classList.remove('hidden');
             });
-
-            // Seller Listeners
-            dateFilterButtons.addEventListener('click', (e) => handleDateFilterClick(e, 'seller'));
-            startDateInput.addEventListener('change', () => applyFilter('seller'));
-            endDateInput.addEventListener('change', () => applyFilter('seller'));
+            
+            // --- Log Entry Modal Listeners ---
             openLogEntryModalBtn.addEventListener('click', () => {
+                logEntryForm.reset();
                 logModalTitle.textContent = 'Log Entry';
                 logModalSellerName.classList.add('hidden');
-                logEntryForm.reset();
                 document.getElementById('log-id').value = '';
-                document.getElementById('duration').value = '0h 0m';
                 logEntryModal.classList.remove('hidden');
             });
-            openProfileModalBtn.addEventListener('click', openProfileModal);
             
-            // Admin Listeners
-            adminDateFilterButtons.addEventListener('click', (e) => handleDateFilterClick(e, 'admin'));
-            adminStartDateInput.addEventListener('change', () => applyFilter('admin'));
-            adminEndDateInput.addEventListener('change', () => applyFilter('admin'));
-            sellerFilter.addEventListener('change', () => applyFilter('admin'));
-            adminLogsTableBody.addEventListener('click', (e) => {
-                const editBtn = e.target.closest('.edit-log-btn');
-                if (editBtn) openEditLogModal(editBtn.dataset.logId);
+            closeLogEntryModalBtn.addEventListener('click', () => {
+                logEntryModal.classList.add('hidden');
             });
-            openUserManagementBtn.addEventListener('click', async () => {
-                adminDashboard.classList.add('hidden');
-                userManagementPage.classList.remove('hidden');
-                await renderUsers();
-            });
-            backToAdminDashBtn.addEventListener('click', () => {
-                userManagementPage.classList.add('hidden');
-                adminDashboard.classList.remove('hidden');
-            });
-            addNewUserBtn.addEventListener('click', () => openUserModal());
-            userListTable.addEventListener('click', (e) => {
-                const editBtn = e.target.closest('.edit-user-btn');
-                if (editBtn) openUserModal(editBtn.dataset.userId);
-            });
-
-            // Modal Listeners
-            document.getElementById('start-time').addEventListener('change', calculateDuration);
-            document.getElementById('end-time').addEventListener('change', calculateDuration);
-
-            closeLogEntryModalBtn.addEventListener('click', () => logEntryModal.classList.add('hidden'));
-            logEntryModal.addEventListener('click', (e) => { if (e.target === logEntryModal) logEntryModal.classList.add('hidden'); });
             
             logEntryForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const logId = document.getElementById('log-id').value;
-                const { data: { session } } = await supabaseClient.auth.getSession();
-                const userId = session.user.id;
-
+                const isAdmin = currentUserProfile.role === 'admin';
+                
+                // MODIFIED: 'payout_base' is removed from the data object.
+                // The backend trigger will calculate it.
                 const logData = {
                     start_time: document.getElementById('start-time').value,
                     end_time: document.getElementById('end-time').value,
                     branded_sold: parseInt(document.getElementById('branded-sold').value) || 0,
                     free_size_sold: parseInt(document.getElementById('free-size-sold').value) || 0,
-                    payout_base: parseFloat(document.getElementById('base-pay').value) || 0,
-                    created_by: userId,
-                    seller_id: currentUserProfile.role === 'admin' ? sellerFilter.value : userId
                 };
                 
-                let result;
-                if (logId) {
-                    result = await supabaseClient.from('logged_sessions').update(logData).eq('id', logId);
-                } else {
-                    result = await supabaseClient.from('logged_sessions').insert(logData);
+                let response;
+                if (logId) { // Editing existing log
+                    response = await supabaseClient.from('logged_sessions').update(logData).eq('id', logId);
+                } else { // Creating new log
+                    logData.seller_id = currentUserProfile.id;
+                    logData.created_by = currentUserProfile.id;
+                    response = await supabaseClient.from('logged_sessions').insert([logData]);
                 }
 
-                if (result.error) {
-                    showNotification(result.error.message, true);
+                if (response.error) {
+                    showNotification(response.error.message, true);
                 } else {
-                    showNotification('Log saved successfully!');
+                    showNotification(`Log ${logId ? 'updated' : 'created'} successfully!`);
                     logEntryModal.classList.add('hidden');
-                    applyFilter(currentUserProfile.role);
+                    applyFilter(isAdmin ? 'admin' : 'seller');
+                }
+            });
+            
+            ['start-time', 'end-time'].forEach(id => {
+                document.getElementById(id).addEventListener('change', calculateDuration);
+            });
+
+            // --- Filter Listeners ---
+            dateFilterButtons.addEventListener('click', (e) => handleDateFilterClick(e, 'seller'));
+            adminDateFilterButtons.addEventListener('click', (e) => handleDateFilterClick(e, 'admin'));
+            [startDateInput, endDateInput, adminStartDateInput, adminEndDateInput, sellerFilter].forEach(el => {
+                el.addEventListener('change', () => {
+                    const userType = el.id.startsWith('admin') ? 'admin' : 'seller';
+                    applyFilter(userType);
+                });
+            });
+            
+            // --- Admin Listeners ---
+            document.getElementById('admin-logs-table').addEventListener('click', (e) => {
+                const editBtn = e.target.closest('.edit-log-btn');
+                if (editBtn) {
+                    openEditLogModal(editBtn.dataset.logId);
                 }
             });
 
+            openUserManagementBtn.addEventListener('click', () => {
+                hideAllScreens();
+                userManagementPage.classList.remove('hidden');
+                renderUsers();
+            });
+
+            backToAdminDashBtn.addEventListener('click', () => {
+                hideAllScreens();
+                adminDashboard.classList.remove('hidden');
+            });
+
+            // --- Bonus Config Modal Listeners ---
             openBonusConfigModalBtn.addEventListener('click', async () => {
-                await populateBonusConfigForm(bonusTypeSelect.value);
+                await loadBonusConfigs();
+                populateBonusConfigForm(bonusTypeSelect.value);
                 bonusConfigModal.classList.remove('hidden');
             });
-            bonusTypeSelect.addEventListener('change', (e) => populateBonusConfigForm(e.target.value));
-            closeBonusConfigModalBtn.addEventListener('click', () => bonusConfigModal.classList.add('hidden'));
-            bonusConfigModal.addEventListener('click', (e) => { if (e.target === bonusConfigModal) bonusConfigModal.classList.add('hidden'); });
             
+            closeBonusConfigModalBtn.addEventListener('click', () => {
+                bonusConfigModal.classList.add('hidden');
+            });
+
+            bonusTypeSelect.addEventListener('change', () => {
+                populateBonusConfigForm(bonusTypeSelect.value);
+            });
+
             bonusConfigForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const configData = {
                     cadence: bonusTypeSelect.value,
-                    min_duration_hours: parseInt(document.getElementById('target-duration').value),
-                    min_branded_sold: parseInt(document.getElementById('target-branded').value),
-                    min_freesize_sold: parseInt(document.getElementById('target-freesize').value),
-                    bonus_amount: parseFloat(document.getElementById('bonus-amount').value),
+                    min_duration_hours: document.getElementById('target-duration').value,
+                    min_branded_sold: document.getElementById('target-branded').value,
+                    min_freesize_sold: document.getElementById('target-freesize').value,
+                    bonus_amount: document.getElementById('bonus-amount').value,
                     updated_by: currentUserProfile.id
                 };
 
-                const { error } = await supabaseClient
-                    .from('bonus_configs')
-                    .upsert(configData, { onConflict: 'cadence' });
-
+                const { error } = await supabaseClient.from('bonus_configs').upsert(configData, { onConflict: 'cadence' });
+                
                 if (error) {
                     showNotification(error.message, true);
                 } else {
                     showNotification('Bonus configuration saved!');
                     bonusConfigModal.classList.add('hidden');
-                    await loadBonusConfigs();
+                    loadBonusConfigs(); // Reload configs to update tooltips
                 }
             });
-            
+
+            // --- User Management Listeners ---
+            addNewUserBtn.addEventListener('click', () => openUserModal());
+            userListTable.addEventListener('click', (e) => {
+                const editBtn = e.target.closest('.edit-user-btn');
+                if (editBtn) {
+                    openUserModal(editBtn.dataset.userId);
+                }
+            });
+
             closeUserModalBtn.addEventListener('click', () => userModal.classList.add('hidden'));
-            userModal.addEventListener('click', (e) => { if(e.target === userModal) userModal.classList.add('hidden'); });
-            
+
             userForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const userId = document.getElementById('user-id').value;
-                const email = document.getElementById('user-email').value;
-                const fullName = document.getElementById('user-name').value;
-                const role = document.getElementById('user-role').value;
-                const status = document.getElementById('user-status').value;
+                const userData = {
+                    full_name: document.getElementById('user-name').value,
+                    role: document.getElementById('user-role').value,
+                    status: document.getElementById('user-status').value,
+                };
 
-                if (userId) {
-                    const { error } = await supabaseClient.from('profiles').update({
-                        full_name: fullName,
-                        role: role,
-                        status: status
-                    }).eq('id', userId);
+                if (userId) { // Editing
+                    const { error } = await supabaseClient.from('profiles').update(userData).eq('id', userId);
                     if (error) showNotification(error.message, true);
-                    else showNotification('User updated successfully!');
-                } else {
-                    const { error } = await supabaseClient.auth.admin.createUser({
-                        email: email,
-                        email_confirm: true,
-                        user_metadata: { full_name: fullName }
+                    else showNotification('User updated successfully.');
+                } else { // Adding (via admin invite)
+                    const email = document.getElementById('user-email').value;
+                    const { data, error } = await supabaseClient.auth.admin.inviteUserByEmail(email, {
+                        data: userData
                     });
-
-                    if (error) {
-                        showNotification(error.message, true);
-                    } else {
-                        showNotification('User invited successfully!');
-                    }
+                    if (error) showNotification(error.message, true);
+                    else showNotification('Invitation sent successfully.');
                 }
                 userModal.classList.add('hidden');
-                await renderUsers();
+                renderUsers();
             });
-
+            
             resetPasswordBtn.addEventListener('click', async () => {
                 const email = document.getElementById('user-email').value;
-                const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
-                    redirectTo: window.location.origin,
-                });
+                const { error } = await supabaseClient.auth.resetPasswordForEmail(email);
                 if (error) {
                     showNotification(error.message, true);
                 } else {
                     showNotification('Password reset email sent.');
                 }
-                userModal.classList.add('hidden');
             });
-            
+
+            // --- Profile Modal Listeners ---
+            openProfileModalBtn.addEventListener('click', openProfileModal);
             closeProfileModalBtn.addEventListener('click', () => profileModal.classList.add('hidden'));
-            profileModal.addEventListener('click', (e) => { if(e.target === profileModal) profileModal.classList.add('hidden'); });
             
             profileForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
-                const newPassword = document.getElementById('profile-new-password').value;
-                const confirmPassword = document.getElementById('profile-confirm-password').value;
-
-                if (newPassword) {
-                    if (newPassword !== confirmPassword) {
-                        showNotification('Passwords do not match.', true);
-                        return;
-                    }
-                    const { error: authError } = await supabaseClient.auth.updateUser({ password: newPassword });
-                    if (authError) {
-                        showNotification(authError.message, true);
-                        return;
-                    }
-                }
-
-                const profileData = {
+                
+                // Update profile info
+                const profileUpdates = {
                     full_name: document.getElementById('profile-name').value,
                     contact_number: document.getElementById('profile-phone').value,
-                    gcash_number: document.getElementById('profile-gcash').value,
+                    gcash_number: document.getElementById('profile-gcash').value
                 };
-
-                const { error: profileError } = await supabaseClient.from('profiles').update(profileData).eq('id', currentUserProfile.id);
-                
+                const { error: profileError } = await supabaseClient.from('profiles').update(profileUpdates).eq('id', currentUserProfile.id);
                 if (profileError) {
                     showNotification(profileError.message, true);
-                } else {
-                    showNotification('Profile saved successfully!');
-                    profileModal.classList.add('hidden');
-                    const { data } = await supabaseClient.from('profiles').select('*').eq('id', currentUserProfile.id).single();
-                    currentUserProfile = data;
+                    return;
                 }
+                
+                // Update password if provided
+                const newPassword = document.getElementById('profile-new-password').value;
+                const confirmPassword = document.getElementById('profile-confirm-password').value;
+                if (newPassword) {
+                    if (newPassword !== confirmPassword) {
+                        showNotification("Passwords do not match.", true);
+                        return;
+                    }
+                    const { error: passwordError } = await supabaseClient.auth.updateUser({ password: newPassword });
+                    if (passwordError) {
+                         showNotification(passwordError.message, true);
+                         return;
+                    }
+                }
+                
+                showNotification('Profile saved successfully!');
+                profileModal.classList.add('hidden');
+                // Refetch profile to update local state
+                currentUserProfile = await fetchUserProfile({ id: currentUserProfile.id }); 
+                sellerWelcomeName.textContent = `Hi, ${currentUserProfile.full_name.split(' ')[0]}!`;
             });
+
         });
     </script>
 </body>
