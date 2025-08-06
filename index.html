@@ -1318,9 +1318,9 @@
                 } else {
                     showNotification('Password reset email sent.');
                 }
-            });
+        });
 
-            // --- Profile Modal Listeners ---
+        // --- Profile Modal Listeners ---
             openProfileModalBtn.addEventListener('click', openProfileModal);
             closeProfileModalBtn.addEventListener('click', () => profileModal.classList.add('hidden'));
             
@@ -1362,6 +1362,13 @@
             });
 
         });
+    </script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/service-worker.js');
+            });
+        }
     </script>
 </body>
 </html>
