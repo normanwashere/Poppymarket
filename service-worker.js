@@ -1,8 +1,9 @@
 // A unique name for our cache
-const CACHE_NAME = 'poppy-market-cache-v1';
+const CACHE_NAME = 'poppy-market-cache-v2'; // Incremented version to ensure updates
+const DATA_CACHE_NAME = 'poppy-market-data-cache-v1';
 
-// The list of files and resources to cache immediately upon installation
-const urlsToCache = [
+// The list of core files to cache immediately upon installation
+const CORE_ASSETS = [
   '/', // The main index.html file
   'https://cdn.tailwindcss.com',
   'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap',
@@ -10,72 +11,64 @@ const urlsToCache = [
 ];
 
 // --- INSTALL Event ---
-// This event is fired when the service worker is first installed.
 self.addEventListener('install', (event) => {
-  // We wait until the caching is complete before finishing installation.
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
-        console.log('Opened cache');
-        // Add all the specified URLs to the cache.
-        return cache.addAll(urlsToCache);
-      })
-  );
-});
-
-// --- FETCH Event ---
-// This event is fired for every network request the page makes.
-self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    // Try to find a matching response in the cache first.
-    caches.match(event.request)
-      .then((response) => {
-        // If a cached response is found, return it.
-        if (response) {
-          return response;
-        }
-
-        // If not found in cache, fetch it from the network.
-        return fetch(event.request).then(
-          (networkResponse) => {
-            // If the fetch is successful, we should cache the new response.
-            if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic') {
-              return networkResponse;
-            }
-
-            // IMPORTANT: Clone the response. A response is a stream
-            // and because we want the browser to consume the response
-            // as well as the cache consuming the response, we need
-            // to clone it so we have two streams.
-            const responseToCache = networkResponse.clone();
-
-            caches.open(CACHE_NAME)
-              .then((cache) => {
-                cache.put(event.request, responseToCache);
-              });
-
-            return networkResponse;
-          }
-        );
+        console.log('Opened core asset cache');
+        return cache.addAll(CORE_ASSETS);
       })
   );
 });
 
 // --- ACTIVATE Event ---
-// This event is fired when the service worker is activated.
-// It's a good place to clean up old caches.
+// Cleans up old caches.
 self.addEventListener('activate', (event) => {
-  const cacheWhitelist = [CACHE_NAME];
+  const cacheWhitelist = [CACHE_NAME, DATA_CACHE_NAME];
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
           if (cacheWhitelist.indexOf(cacheName) === -1) {
-            // If this cache name is not in our whitelist, delete it.
             return caches.delete(cacheName);
           }
         })
       );
     })
+  );
+});
+
+// --- FETCH Event ---
+self.addEventListener('fetch', (event) => {
+  const url = new URL(event.request.url);
+
+  // --- Stale-While-Revalidate for API/Data calls ---
+  // If the request is for our Supabase data, use a network-first strategy.
+  if (url.origin === 'https://lmzxjxumfqjrvcnsrfbr.supabase.co') {
+    event.respondWith(
+      caches.open(DATA_CACHE_NAME).then((cache) => {
+        return fetch(event.request).then((networkResponse) => {
+          // If we get a valid response, cache it and return it.
+          if (networkResponse && networkResponse.status === 200) {
+            cache.put(event.request, networkResponse.clone());
+          }
+          return networkResponse;
+        }).catch(() => {
+          // If the network fails, try to serve from the cache.
+          return cache.match(event.request);
+        });
+      })
+    );
+    return;
+  }
+
+  // --- Cache First for Core Assets ---
+  // For all other requests (our core assets), serve from cache first.
+  event.respondWith(
+    caches.match(event.request)
+      .then((response) => {
+        // If a cached response is found, return it. Otherwise, fetch from network.
+        return response || fetch(event.request);
+      })
   );
 });
