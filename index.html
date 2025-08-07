@@ -775,11 +775,9 @@
             }
 
             async function populateSellerFilter() {
-                // FIX: Add .eq('role', 'seller') to exclude admins from the dropdown
                 const { data, error } = await supabaseClient
-                    .from('profiles')
-                    .select('id, full_name')
-                    .eq('role', 'seller')
+                    .from('sellers_v')      // view = sellers only
+                    .select('*')            // id, full_name
                     .order('full_name');
 
                 if (error) {
