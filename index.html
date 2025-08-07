@@ -629,7 +629,16 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-            
+
+            // --- REMOVE SERVICE WORKER REGISTRATION ---
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                    for(let registration of registrations) {
+                        registration.unregister();
+                    }
+                });
+            }
+
             // --- DOM Elements ---
             const loginScreen = document.getElementById('login-screen');
             const registerScreen = document.getElementById('register-screen');
