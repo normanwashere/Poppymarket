@@ -1,34 +1,41 @@
 /* eslint-disable no-restricted-globals */
-const CACHE_NAME      = 'poppy-market-shell-v4';
-const DATA_CACHE_NAME = 'poppy-market-data-v1';
+const CACHE_NAME      = 'poppy-shell-v5';
+const DATA_CACHE_NAME = 'poppy-data-v1';
 
+/* ONLY assets you’re certain are emitted by Vercel */
 const CORE_ASSETS = [
   '/',
   '/index.html',
-  '/manifest.json',
-  '/styles.css',
-  '/main.js',
-  '/icons/icon-192.png',
-  '/icons/icon-512.png'
+  '/manifest.json'
 ];
 
-/* INSTALL */
-self.addEventListener('install', event => {
+/* ---------- INSTALL ---------- */
+self.addEventListener('install', (event) => {
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE_NAME);
-    try { await cache.addAll(CORE_ASSETS); } catch (err) { console.warn(err); }
+
+    /* try each asset individually so one 404 doesn’t crash everything */
+    await Promise.all(
+      CORE_ASSETS.map(async (url) => {
+        try { await cache.add(url); }         // 200 => cached
+        catch (err) { console.warn('[SW] skip', url); }
+      })
+    );
+
     self.skipWaiting();
   })());
 });
 
-/* ACTIVATE */
-self.addEventListener('activate', event => {
+/* ---------- ACTIVATE ---------- */
+self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys()
       .then(keys =>
         Promise.all(
           keys.map(k =>
-            [CACHE_NAME, DATA_CACHE_NAME].includes(k) ? null : caches.delete(k)
+            [CACHE_NAME, DATA_CACHE_NAME].includes(k)
+              ? null
+              : caches.delete(k)
           )
         )
       )
@@ -36,19 +43,19 @@ self.addEventListener('activate', event => {
   );
 });
 
-/* FETCH */
-self.addEventListener('fetch', event => {
+/* ---------- FETCH ---------- */
+self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  /* Network-first for Supabase API */
+  /* Network-first for Supabase API (skip cache on POST/PUT, etc.) */
   if (url.origin === 'https://lmzxjxumfqjrvcnsrfbr.supabase.co') {
     event.respondWith(
       caches.open(DATA_CACHE_NAME).then(cache =>
         fetch(request)
           .then(res => {
             if (request.method === 'GET' && res.status === 200) {
-              cache.put(request, res.clone());     // only GET can be cached
+              cache.put(request, res.clone());
             }
             return res;
           })
