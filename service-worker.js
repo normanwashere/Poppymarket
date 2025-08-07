@@ -48,17 +48,30 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  /* Network-first for Supabase API (skip cache on POST/PUT, etc.) */
+  // Never cache Supabase auth endpoints, profile data, or any POST/PATCH/PUT requests
+  const isSupabaseAuth = url.origin === 'https://lmzxjxumfqjrvcnsrfbr.supabase.co' && (
+    url.pathname.startsWith('/auth/v1') ||
+    url.pathname.startsWith('/rest/v1/profiles') ||
+    url.pathname.startsWith('/rest/v1/logged_sessions') ||
+    url.pathname.startsWith('/rest/v1/bonus_configs') ||
+    url.pathname.startsWith('/functions/v1/')
+  );
+  if (isSupabaseAuth || request.method !== 'GET') {
+    // Always go to network, never cache
+    event.respondWith(fetch(request));
+    return;
+  }
+
+  // Network-first for safe Supabase GET data endpoints
   if (
-  url.origin === 'https://lmzxjxumfqjrvcnsrfbr.supabase.co' &&
-  url.pathname.startsWith('/rest/v1') &&     // cache data calls only
-  request.method === 'GET'                   // never touch POST/PATCH
+    url.origin === 'https://lmzxjxumfqjrvcnsrfbr.supabase.co' &&
+    url.pathname.startsWith('/rest/v1')
   ) {
     event.respondWith(
       caches.open(DATA_CACHE_NAME).then(cache =>
         fetch(request)
           .then(res => {
-            if (request.method === 'GET' && res.status === 200) {
+            if (res.status === 200) {
               cache.put(request, res.clone());
             }
             return res;
@@ -69,7 +82,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  /* Cache-first for everything else */
+  // Cache-first for static assets only
   event.respondWith(
     caches.match(request).then(resp => resp || fetch(request))
   );
