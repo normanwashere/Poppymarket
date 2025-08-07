@@ -1,5 +1,5 @@
 /* eslint-disable no-restricted-globals */
-const CACHE_NAME      = 'poppy-market-shell-v3';
+const CACHE_NAME      = 'poppy-market-shell-v4';
 const DATA_CACHE_NAME = 'poppy-market-data-v1';
 
 const CORE_ASSETS = [
@@ -16,12 +16,7 @@ const CORE_ASSETS = [
 self.addEventListener('install', event => {
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE_NAME);
-    try {
-      await cache.addAll(CORE_ASSETS);
-      console.log('[SW] Core assets cached');
-    } catch (err) {
-      console.warn('[SW] Partial precache:', err);
-    }
+    try { await cache.addAll(CORE_ASSETS); } catch (err) { console.warn(err); }
     self.skipWaiting();
   })());
 });
@@ -32,14 +27,12 @@ self.addEventListener('activate', event => {
     caches.keys()
       .then(keys =>
         Promise.all(
-          keys.map(key =>
-            [CACHE_NAME, DATA_CACHE_NAME].includes(key)
-              ? Promise.resolve()
-              : caches.delete(key)
+          keys.map(k =>
+            [CACHE_NAME, DATA_CACHE_NAME].includes(k) ? null : caches.delete(k)
           )
         )
       )
-      .then(() => self.clients.claim())     // <- extra “)” back in place
+      .then(() => self.clients.claim())
   );
 });
 
@@ -53,9 +46,11 @@ self.addEventListener('fetch', event => {
     event.respondWith(
       caches.open(DATA_CACHE_NAME).then(cache =>
         fetch(request)
-          .then(response => {
-            if (response.status === 200) cache.put(request, response.clone());
-            return response;
+          .then(res => {
+            if (request.method === 'GET' && res.status === 200) {
+              cache.put(request, res.clone());     // only GET can be cached
+            }
+            return res;
           })
           .catch(() => cache.match(request))
       )
