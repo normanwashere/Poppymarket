@@ -960,7 +960,17 @@
                         }
                     });
 
-                    if (error) throw error;
+                    if (error) {
+                        let errorMessage = '';
+                        if (typeof error === 'string') {
+                            errorMessage = error;
+                        } else if (error && (error.message || error.error)) {
+                            errorMessage = error.message || error.error;
+                        } else {
+                            errorMessage = JSON.stringify(error);
+                        }
+                        throw new Error(errorMessage);
+                    }
 
                     const formatCurrency = (num) => `₱${(num || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
                     document.getElementById(`${prefix}stat-branded`).textContent = data.total_branded_sold || 0;
@@ -973,20 +983,8 @@
 
                 } catch (err) {
                     let errorMessage = err.message || 'An unknown error occurred.';
-                    if (err.context && typeof err.context.json === 'function') {
-                        try {
-                            const errorBody = await err.context.json();
-                            errorMessage = errorBody.message || errorBody.error || errorMessage;
-                        } catch (parseError) {
-                            try {
-                                errorMessage = await err.context.text();
-                            } catch (textError) {
-                                console.error('Failed to parse error response as text:', textError);
-                            }
-                        }
-                    }
-                    console.error('Error invoking aggregate stats:', errorMessage, err);
                     showNotification(`Aggregate Error: ${errorMessage}`, true);
+                    console.error('Error invoking aggregate stats:', errorMessage, err);
                 }
             }
             
@@ -1267,8 +1265,19 @@
                 e.preventDefault();
                 const email = document.getElementById('email').value;
                 const password = document.getElementById('password').value;
-                const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
-                if (error) showNotification(error.message, true);
+                const signInBtn = loginForm.querySelector('button[type="submit"]');
+                signInBtn.disabled = true;
+                const originalText = signInBtn.innerHTML;
+                signInBtn.innerHTML = '<span class="animate-spin mr-2">⏳</span>Signing In...';
+                try {
+                    const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+                    if (error) showNotification(error.message, true);
+                } catch (err) {
+                    showNotification('Network error. Please try again.', true);
+                } finally {
+                    signInBtn.disabled = false;
+                    signInBtn.innerHTML = originalText;
+                }
             });
 
             registerForm.addEventListener('submit', async (e) => {
