@@ -917,7 +917,22 @@
                         }
                     });
 
-                    if (error) throw error;
+                    if (error) {
+                        // Detect 404 error from Supabase function endpoint
+                        if (error.status === 404 || (error.message && error.message.includes('404'))) {
+                            showNotification('Bonus Error: Endpoint not found (404). Please check if the Supabase Edge Function "calculate-bonuses" is deployed.', true);
+                            console.error('Supabase function endpoint not found (404): calculate-bonuses', error);
+                        } else {
+                            throw error;
+                        }
+                        // Set stat cards to Error
+                        const statCardsToAnimate = [`${prefix}stat-basepay`, `${prefix}stat-daily-bonus`, `${prefix}stat-weekly-bonus`, `${prefix}stat-monthly-bonus`, `${prefix}stat-total`];
+                        statCardsToAnimate.forEach(id => {
+                            const el = document.getElementById(id);
+                            if(el) el.textContent = 'Error';
+                        });
+                        return;
+                    }
 
                     const formatCurrency = (num) => `₱${(num || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
                     document.getElementById(`${prefix}stat-basepay`).textContent = formatCurrency(data.basePay);
@@ -942,7 +957,6 @@
                     }
                     console.error('Error invoking bonus calculator:', errorMessage, err);
                     showNotification(`Bonus Error: ${errorMessage}`, true);
-                    
                     const statCardsToAnimate = [`${prefix}stat-basepay`, `${prefix}stat-daily-bonus`, `${prefix}stat-weekly-bonus`, `${prefix}stat-monthly-bonus`, `${prefix}stat-total`];
                     statCardsToAnimate.forEach(id => {
                         const el = document.getElementById(id);
@@ -1037,15 +1051,18 @@
 
                 let query = supabaseClient
                     .from('logged_sessions')
-                    .select('*')
+                    .select('*, seller:profiles!logged_sessions_seller_id_fkey(role)')
                     .gte('start_time', startInput.value)
                     .lte('start_time', `${endInput.value}T23:59:59Z`)
                     .order('start_time', { ascending: false });
-                
+
                 if (is_admin) {
                     const selectedSellerId = sellerFilter.value;
                     if (selectedSellerId !== 'all') {
                         query = query.eq('seller_id', selectedSellerId);
+                    } else {
+                        // Only include logs for users whose current role is 'seller'
+                        query = query.eq('seller.role', 'seller');
                     }
                 } else {
                     query = query.eq('seller_id', currentUserProfile.id);
