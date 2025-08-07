@@ -49,7 +49,11 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(request.url);
 
   /* Network-first for Supabase API (skip cache on POST/PUT, etc.) */
-  if (url.origin === 'https://lmzxjxumfqjrvcnsrfbr.supabase.co') {
+  if (
+  url.origin === 'https://lmzxjxumfqjrvcnsrfbr.supabase.co' &&
+  url.pathname.startsWith('/rest/v1') &&     // cache data calls only
+  request.method === 'GET'                   // never touch POST/PATCH
+  ) {
     event.respondWith(
       caches.open(DATA_CACHE_NAME).then(cache =>
         fetch(request)
