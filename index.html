@@ -777,9 +777,36 @@
 
                 if (currentUserProfile.role === 'admin') {
                     adminDashboard.classList.remove('hidden');
-                    // FIX: Wait for the filter to be populated before triggering the data load
-                    await populateSellerFilter(); 
-                    document.querySelector('#admin-date-filter-buttons .filter-btn[data-filter="this-week"]')?.click();
+                    await populateSellerFilter();
+                    
+                    // Restore last selected seller from localStorage if available
+                    const lastSelectedSeller = localStorage.getItem('lastSelectedSeller');
+                    if (lastSelectedSeller) {
+                        sellerFilter.value = lastSelectedSeller;
+                    }
+                    
+                    // Restore last selected date range from localStorage if available
+                    const lastDateRange = JSON.parse(localStorage.getItem('lastDateRange') || 'null');
+                    if (lastDateRange) {
+                        adminStartDateInput.value = lastDateRange.start;
+                        adminEndDateInput.value = lastDateRange.end;
+                        // Find and activate the matching filter button if dates match a preset
+                        const filterButtons = document.querySelectorAll('#admin-date-filter-buttons .filter-btn');
+                        let matchingButtonFound = false;
+                        filterButtons.forEach(btn => {
+                            if (btn.dataset.filter === lastDateRange.filterType) {
+                                btn.click();
+                                matchingButtonFound = true;
+                            }
+                        });
+                        if (!matchingButtonFound) {
+                            // If no matching preset, show custom filter
+                            document.querySelector('#admin-date-filter-buttons .filter-btn[data-filter="custom"]')?.click();
+                        }
+                    } else {
+                        // Default to "This Week" if no saved range
+                        document.querySelector('#admin-date-filter-buttons .filter-btn[data-filter="this-week"]')?.click();
+                    }
                 } else {
                     sellerDashboard.classList.remove('hidden');
                     sellerWelcomeName.textContent = `Hi, ${currentUserProfile.full_name.split(' ')[0]}!`;
@@ -788,9 +815,11 @@
             }
 
             async function populateSellerFilter() {
+                // Only show users whose current role is 'seller'
                 const { data, error } = await supabaseClient
-                    .from('sellers_v')      // view = sellers only
-                    .select('*')            // id, full_name
+                    .from('profiles')
+                    .select('id, full_name, role')
+                    .eq('role', 'seller')
                     .order('full_name');
 
                 if (error) {
@@ -887,6 +916,7 @@
                         actionsHtml = `<td class="align-top"><button class="edit-log-btn p-1 text-blue-600 hover:text-blue-800" data-log-id="${log.id}"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button></td>`;
                     }
                     
+                    // Same table cells for both admin and seller
                     row.innerHTML = `
                         <td class="align-top">
                             <div class="font-bold text-gray-800">${formatShortDate(log.start_time)}</div>
@@ -898,11 +928,10 @@
                         </td>
                         <td class="align-top">
                             <div class="text-sm text-gray-700">Base: ₱${(log.payout_base || 0).toFixed(2)}</div>
-                            <div class="text-sm text-amber-700">Bonus: ₱${totalBonus.toFixed(2)}</div>
-                            <div class="font-bold text-gray-900 mt-1">Total: ₱${totalPayout.toFixed(2)}</div>
                         </td>
-                        ${actionsHtml}
+                        ${userType === 'admin' ? actionsHtml : ''}
                     `;
+                    }
                 }
             }
 
@@ -1060,7 +1089,7 @@
 
                 let query = supabaseClient
                     .from('logged_sessions')
-                    .select('*, seller:profiles!logged_sessions_seller_id_fkey(role)')
+                    .select('*, seller:profiles!logged_sessions_seller_id_fkey(id, role)')
                     .gte('start_time', startInput.value)
                     .lte('start_time', `${endInput.value}T23:59:59Z`)
                     .order('start_time', { ascending: false });
@@ -1071,10 +1100,22 @@
                         query = query.eq('seller_id', selectedSellerId);
                     } else {
                         // Only include logs for users whose current role is 'seller'
-                        query = query.eq('seller.role', 'seller');
+                        query = query.in('seller_id', dataSellerIds);
                     }
                 } else {
                     query = query.eq('seller_id', currentUserProfile.id);
+                }
+
+                // Get current seller IDs for filtering logs
+                let dataSellerIds = [];
+                if (is_admin && sellerFilter.value === 'all') {
+                    const { data: sellers } = await supabaseClient
+                        .from('profiles')
+                        .select('id')
+                        .eq('role', 'seller');
+                    if (sellers) {
+                        dataSellerIds = sellers.map(s => s.id);
+                    }
                 }
 
                 const { data, error } = await query;
@@ -1109,6 +1150,15 @@
                 const customFilter = is_admin ? adminCustomDateFilter : customDateFilter;
                 const startInput = is_admin ? adminStartDateInput : startDateInput;
                 const endInput = is_admin ? adminEndDateInput : endDateInput;
+                
+                // Save filter type for admin dashboard
+                if (is_admin) {
+                    localStorage.setItem('lastDateRange', JSON.stringify({
+                        filterType: clickedButton.dataset.filter,
+                        start: startInput.value,
+                        end: endInput.value
+                    }));
+                }
 
                 filterButtons.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
                 clickedButton.classList.add('active');
@@ -1433,7 +1483,11 @@
             adminStartDateInput.addEventListener('change', () => handleDateInputChange(adminStartDateInput, adminEndDateInput, 'admin'));
             adminEndDateInput.addEventListener('change', () => handleDateInputChange(adminStartDateInput, adminEndDateInput, 'admin'));
             
-            sellerFilter.addEventListener('change', () => applyFilter('admin'));
+            sellerFilter.addEventListener('change', () => {
+                // Save selected seller to localStorage
+                localStorage.setItem('lastSelectedSeller', sellerFilter.value);
+                applyFilter('admin');
+            });
             
             // --- Admin Listeners ---
             document.getElementById('admin-logs-table').addEventListener('click', (e) => {
