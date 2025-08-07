@@ -740,20 +740,24 @@
                 }
 
                 let profile = null;
+                let lastProfileError = null;
                 for (let i = 0; i < 5; i++) {
                     profile = await fetchUserProfile(session.user);
                     if (profile) break;
+                    lastProfileError = `Attempt ${i+1}: Could not fetch profile.`;
                     await new Promise(res => setTimeout(res, 500));
                 }
-                
+
                 if (!profile) {
-                    showNotification("Could not load your profile. Please try logging in again.", true);
+                    console.error("Login loop debug: Failed to load profile after 5 attempts.", lastProfileError, session?.user);
+                    showNotification("Could not load your profile. Please try logging in again. (Profile missing)", true);
                     await supabaseClient.auth.signOut();
                     return;
                 }
 
                 if (profile.status !== 'active') {
-                    showNotification('Your account is pending verification. Please check your email.', true);
+                    console.error("Login loop debug: Profile status is not 'active'.", profile);
+                    showNotification(`Your account is pending verification (status: ${profile.status}). Please check your email.`, true);
                     await supabaseClient.auth.signOut();
                     return;
                 }
